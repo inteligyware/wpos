@@ -10,8 +10,6 @@
 
 #include <QtDBus/QDBusConnection>
 
-const QString& OPTION_CONNECTION_NAME = "ProductOptionModuleConnectionName";
-const QString& OPTION_PATH_FILE = "xmldocs:bar_database.xml";
 static const QString& OPTIONS_DTD = "dtddocs:products_optionslist.dtd";
 
 #include <iostream>
@@ -23,6 +21,7 @@ ProductOptionModule::ProductOptionModule(QObject* parent, const QString& name)
     : QObject(parent)
 {
     setObjectName(name);
+    database.connect();
     new DBusBOProductOptionAdaptor(this);
     QDBusConnection dbus = QDBusConnection::sessionBus();
     dbus.registerObject(ProductOptionModule::DBusObjectPath, this);
@@ -31,15 +30,13 @@ ProductOptionModule::ProductOptionModule(QObject* parent, const QString& name)
 bool ProductOptionModule::deleteOption(const QString& xml_string)
 {
     XmlConfig xml;
-    ProductOptionsModuleDB* db = 0;
-
     if (!xml.readXmlFromString(xml_string)) {
-        cerr << "Cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "Cannot convert string into xml" << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
     if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "XML does not validate against DTD " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         xml.debug();
         return false;
     }
@@ -47,963 +44,691 @@ bool ProductOptionModule::deleteOption(const QString& xml_string)
     xml.delDomain();
     xml.setDomain("options[0].option[0]");
     if (xml.readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "Empty option type " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
     if (xml.readString("option_name").isEmpty()) {
-        cerr << "Empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "Empty option name " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    if (db->deleteOption(xml.readString("option_type"), xml.readString("option_name"))) {
-        delete db;
-
-        return true;
-    }
-    delete db;
-
-    return false;
+    return database.deleteOption(xml.readString("option_type"), xml.readString("option_name"));
 }
 
 bool ProductOptionModule::deleteOptionType(const QString& option_type)
 {
-    ProductOptionsModuleDB* db = 0;
 
     if (option_type.isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-
-    if (db->deleteOptionType(option_type)) {
-        delete db;
-        return true;
-    } else {
-        delete db;
-        return false;
-    }
+    return database.deleteOptionType(option_type);
 }
 
 bool ProductOptionModule::existOption(const QString& xml_string)
 {
-    ProductOptionsModuleDB* db = 0;
-    XmlConfig* xml = 0;
-
-    xml = new XmlConfig();
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "El xml no tiene una estructura correcta " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML doesn't validate with DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
 
-    xml->delDomain();
-    xml->setDomain("options[0]");
-    xml->setDomain("option[0]");
+    xml.delDomain();
+    xml.setDomain("options[0]");
+    xml.setDomain("option[0]");
 
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    if (xml.readString("option_type").isEmpty()
+        || xml.readString("option_name").isEmpty()) {
+        cerr << "Empty type or Name for option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (xml->readString("option_name").isEmpty()) {
-        cerr << "empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return false;
-    }
-
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-
-    if (db->existOption(xml->readString("option_type"), xml->readString("option_name"))) {
-        delete db;
-        delete xml;
-        return true;
-    }
-    delete db;
-    delete xml;
-    return false;
+    return database.existOption(
+        xml.readString("option_type"),
+        xml.readString("option_name"));
 }
 
 bool ProductOptionModule::existOptionType(const QString& option_type)
 {
-    ProductOptionsModuleDB* db = 0;
-
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-
-    if (db->existOptionType(option_type)) {
-        delete db;
-        return true;
-    } else {
-        delete db;
-        return false;
-    }
+    return database.existOptionType(option_type);
 }
 
 QString ProductOptionModule::getDescriptionOption(const QString& xml_string)
 {
-    QString description;
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-
-    description = "";
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot conver xml into string" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return description;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot conver xml into string"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
-        return description;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return QString {};
     }
-    xml->delDomain();
-    xml->setDomain("options[0].option[0]");
+    xml.delDomain();
+    xml.setDomain("options[0].option[0]");
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    description = db->getDescriptionOption(xml->readString("option_type"),
-        xml->readString("option_name"));
-    delete db;
-    delete xml;
-    return description;
+    return database.getDescriptionOption(
+        xml.readString("option_type"),
+        xml.readString("option_name"));
 }
 
 QString ProductOptionModule::getDescriptionOptionType(const QString& option_type)
 {
-    QString description;
-    ProductOptionsModuleDB* db = 0;
-
-    description = "";
-
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    description = db->getDescriptionOptionType(option_type);
-    delete db;
-
-    return description;
+    return database.getDescriptionOptionType(option_type);
 }
 
 QString ProductOptionModule::getOption(const QString& xml_string)
 {
-    QString xml_return;
-    XmlConfig* xml = 0;
-    ProductOptionData* option = 0;
-    ProductOptionsModuleDB* db = 0;
-
-    xml_return = "";
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return xml_return;
-    }
-
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return QString {};
     }
 
-    xml->delDomain();
-    xml->setDomain("options[0].option[0]");
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return xml_return;
-    }
-
-    if (xml->readString("option_name").isEmpty()) {
-        cerr << "empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return xml_return;
-    }
-
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    option = db->getOption(xml->readString("option_type"), xml->readString("option_name"));
-    delete db;
-    delete xml;
-
-    if (!option) {
-        cerr << "Option does not exists " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        cerr << "Option type: " << xml->readString("option_type").toStdString() << endl;
-        cerr << "Option name: " << xml->readString("option_name").toStdString() << endl;
-        return xml_return;
-    }
-
-    xml = new XmlConfig();
-    xml->delDomain();
-
-    xml->createElementSetDomain("options");
-
-    if (!option) {
-        xml->releaseDomain("options", true);
-        xml->delDomain();
-        xml_return = xml->toString();
-        delete xml;
-        return xml_string;
-    }
-
-    xml->createElementSetDomain("option");
-    xml->createElement("option_type", option->option_type);
-    xml->createElement("option_name", option->option_name);
-    xml->createElement("description_option", option->description_option);
-    xml->releaseDomain("option", true);
-    xml->releaseDomain("options", true);
-
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return QString {};
     }
 
-    xml_return = xml->toString();
-    delete xml;
-    return xml_return;
+    xml.delDomain();
+    xml.setDomain("options[0].option[0]");
+    if (xml.readString("option_type").isEmpty()) {
+        cerr << "Empty option type " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
+    }
+
+    if (xml.readString("option_name").isEmpty()) {
+        cerr << "Empty option name " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
+    }
+
+    ProductOptionData
+        option
+        = database.getOption(
+            xml.readString("option_type"),
+            xml.readString("option_name"));
+
+    if (option.isEmpty()) {
+        cerr << "Option does not exists " << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        cerr << "Option type: " << xml.readString("option_type").toStdString() << '\n';
+        cerr << "Option name: " << xml.readString("option_name").toStdString() << '\n';
+        return QString {};
+    }
+
+    {
+        XmlConfig xml;
+        xml.delDomain();
+        xml.createElementSetDomain("options");
+
+        if (option.isEmpty()) {
+            xml.releaseDomain("options", true);
+            xml.delDomain();
+            return xml.toString();
+        }
+
+        xml.createElementSetDomain("option");
+        xml.createElement("option_type", option.option_type);
+        xml.createElement("option_name", option.option_name);
+        xml.createElement("description_option", option.description_option);
+        xml.releaseDomain("option", true);
+        xml.releaseDomain("options", true);
+
+        if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+            cerr << "XML does not validate against DTD "
+                 << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+            xml.debug();
+            return QString {};
+        }
+
+        return xml.toString();
+    }
 }
 
 QString ProductOptionModule::getOptions(const QString& option_type)
 {
-    QString xml_string;
-    XmlConfig* xml = 0;
-    QStringList* options = 0;
-    ProductOptionsModuleDB* db = 0;
-    int index, count;
-
-    xml_string = "";
-
     if (option_type.isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        return xml_string;
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    options = db->getOptions(option_type);
-    delete db;
-
-    if (!options) {
-        cerr << "there are no options for this option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        cerr << "Option type: " << option_type.toStdString() << endl;
-        return xml_string;
+    QStringList options = database.getOptions(option_type);
+    if (options.isEmpty()) {
+        cerr << "there are no options for this option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        cerr << "Option type: " << option_type.toStdString() << '\n';
+        return QString {};
     }
-    xml = new XmlConfig();
-    xml->delDomain();
-
-    xml->createElementSetDomain("options");
-
-    if (!options) {
-        xml->releaseDomain("options");
-        xml->delDomain();
-        xml_string = xml->toString();
-        delete xml;
-        delete options;
-        return xml_string;
+    XmlConfig xml;
+    xml.delDomain();
+    xml.createElementSetDomain("options");
+    for (const QString& option : options) {
+        xml.createElementSetDomain("option");
+        xml.createElement("option_type");
+        xml.createElement("option_name", option);
+        xml.releaseDomain("option");
     }
+    xml.releaseDomain("options", true);
 
-    count = options->count();
-    for (index = 0; index < count; index++) {
-        xml->createElementSetDomain("option");
-        xml->createElement("option_type");
-        xml->createElement("option_name", (*options)[index]);
-        xml->releaseDomain("option");
-    }
-    xml->releaseDomain("options", true);
-    delete options;
-
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
-        return xml_string;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return QString {};
     }
 
-    xml_string = xml->toString();
-    delete xml;
-
-    return xml_string;
+    return xml.toString();
 }
 
 QString ProductOptionModule::getAllOptions()
 {
-    int i, count;
-    QString xml_string;
-    XmlConfig* xml = 0;
-    QList<ProductOptionData*>* options = 0;
-    ProductOptionData* option = 0;
-    ProductOptionsModuleDB* db = 0;
+    QVector<ProductOptionData> options = database.getAllOptions();
+    if (options.isEmpty())
+        return QString {};
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    options = db->getAllOptions();
-    delete db;
-
-    if (!options)
-        return xml_string;
-
-    xml = new XmlConfig();
-    count = options->count();
-    xml->createElementSetDomain("options");
-    for (i = 0; i < count; i++) {
-        option = options->at(i);
-        xml->createElementSetDomain("option");
-        xml->createElement("option_type", option->option_type);
-        xml->createElement("option_name", option->option_name);
-        xml->releaseDomain("option");
+    XmlConfig xml;
+    xml.createElementSetDomain("options");
+    for (const ProductOptionData& option : options) {
+        xml.createElementSetDomain("option");
+        xml.createElement("option_type", option.option_type);
+        xml.createElement("option_name", option.option_name);
+        xml.releaseDomain("option");
     }
-    xml->delDomain();
-
-    xml_string = xml->toString();
-    delete xml;
-    options->clear();
-    delete options;
-
-    return xml_string;
+    xml.delDomain();
+    return xml.toString();
 }
 
 QString ProductOptionModule::getOptionType(const QString& option_type)
 {
-    QString xml_string;
-    XmlConfig* xml = 0;
-    ProductOptionData* option = 0;
-    ProductOptionsModuleDB* db = 0;
-
-    xml_string = "";
-
     if (option_type.isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        return xml_string;
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    option = db->getOptionType(option_type);
-    delete db;
+    ProductOptionData option = database.getOptionType(option_type);
 
-    if (!option) {
-        cerr << "option type does not exists " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        cerr << "Option type: " << option_type.toStdString() << endl;
-        return xml_string;
+    if (option.isEmpty()) {
+        cerr << "option type does not exists "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        cerr << "Option type: " << option_type.toStdString() << '\n';
+        return QString {};
     }
 
-    xml = new XmlConfig();
-    xml->delDomain();
+    XmlConfig xml;
+    xml.delDomain();
 
-    xml->createElementSetDomain("options");
-    xml->createElementSetDomain("option");
-    xml->createElement("option_type", option->option_type);
-    xml->createElement("description_type", option->description_type);
-    xml->createElement("option_name");
-    xml->releaseDomain("option", true);
-    xml->releaseDomain("options", true);
-    delete option;
+    xml.createElementSetDomain("options");
+    xml.createElementSetDomain("option");
+    xml.createElement("option_type", option.option_type);
+    xml.createElement("description_type", option.description_type);
+    xml.createElement("option_name");
+    xml.releaseDomain("option", true);
+    xml.releaseDomain("options", true);
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
-        return xml_string;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return QString {};
     }
 
-    xml_string = xml->toString();
-    delete xml;
-
-    return xml_string;
+    return xml.toString();
 }
 
 QString ProductOptionModule::getOptionTypes()
 {
-    QString xml_string;
-    XmlConfig* xml = 0;
-    QStringList* options = 0;
-    ProductOptionsModuleDB* db = 0;
-    int index, count;
-
-    xml_string = "";
-
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    options = db->getOptionTypes();
-    delete db;
-
-    if (!options) {
-        cerr << "there are no option types" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        return xml_string;
+    QStringList options = database.getOptionTypes();
+    if (options.isEmpty()) {
+        cerr << "There are no option types "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
     }
 
-    xml = new XmlConfig();
-    xml->createElement("product_code");
-    xml->createElementSetDomain("options");
+    XmlConfig xml;
+    xml.createElement("product_code");
+    xml.createElementSetDomain("options");
 
-    count = options->count();
-    for (index = 0; index < count; index++) {
-        xml->createElementSetDomain("option");
-        xml->createElement("option_type", (*options)[index]);
-        xml->createElement("option_name");
-        xml->releaseDomain("option", true);
+    for (const QString& option : options) {
+        xml.createElementSetDomain("option");
+        xml.createElement("option_type", option);
+        xml.createElement("option_name");
+        xml.releaseDomain("option", true);
     }
-    xml->releaseDomain("option_types", true);
-    delete options;
+    xml.releaseDomain("option_types", true);
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
-        return xml_string;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return QString {};
     }
-    xml_string = xml->toString();
-    delete xml;
-    return xml_string;
+    return xml.toString();
 }
 
 bool ProductOptionModule::insertOption(const QString& xml_string)
 {
-    QString aux;
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-    bool inserted = false;
-
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
 
-    xml->delDomain();
-    xml->setDomain("options.option");
+    xml.delDomain();
+    xml.setDomain("options.option");
 
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    if (xml.readString("option_type").isEmpty()) {
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (xml->readString("option_name").isEmpty()) {
-        cerr << "empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    if (xml.readString("option_name").isEmpty()) {
+        cerr << "Empty option name "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    if (db->insertOption(xml->readString("option_type"), xml->readString("option_name"),
-            xml->readString("description_option")))
-        inserted = true;
-
-    delete db;
-    delete xml;
-    return inserted;
+    return database.insertOption(
+        xml.readString("option_type"),
+        xml.readString("option_name"),
+        xml.readString("description_option"));
 }
 
 bool ProductOptionModule::insertOptionType(const QString& xml_string)
 {
-    QString aux;
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-    bool inserted = false;
-
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
 
-    xml->delDomain();
-    xml->setDomain("options[0].option");
-
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    xml.delDomain();
+    xml.setDomain("options[0].option");
+    if (xml.readString("option_type").isEmpty()) {
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    inserted = db->insertOptionType(xml->readString("option_type"), xml->readString("description_type"));
-    delete db;
-
-    delete xml;
-    return inserted;
+    return database.insertOptionType(
+        xml.readString("option_type"),
+        xml.readString("description_type"));
 }
 
 bool ProductOptionModule::updateOption(const QString& xml_string)
 {
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-    bool updated = false;
-
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert xml into string " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert xml into string "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
 
-    xml->delDomain();
-    xml->setDomain("options[0].option[0]");
-
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    xml.delDomain();
+    xml.setDomain("options[0].option[0]");
+    if (xml.readString("option_type").isEmpty()) {
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (xml->readString("option_name").isEmpty()) {
-        cerr << "empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    if (xml.readString("option_name").isEmpty()) {
+        cerr << "Empty option name "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    updated = db->updateOption(xml->readString("option_type"), xml->readString("option_name"),
-        xml->readString("description_option"));
-    delete db;
-    delete xml;
-    return updated;
+    return database.updateOption(
+        xml.readString("option_type"),
+        xml.readString("option_name"),
+        xml.readString("description_option"));
 }
 
 bool ProductOptionModule::updateOptionType(const QString& xml_string)
 {
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-    bool updated = false;
-
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert xml into string " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert xml into string "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
-        return false;
-    }
-    xml->delDomain();
-    xml->setDomain("options[0].option[0]");
-
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    updated = db->updateOptionType(xml->readString("option_type"), xml->readString("description_type"));
+    xml.delDomain();
+    xml.setDomain("options[0].option[0]");
+    if (xml.readString("option_type").isEmpty()) {
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return false;
+    }
 
-    delete db;
-    delete xml;
-    return updated;
+    return database.updateOptionType(
+        xml.readString("option_type"),
+        xml.readString("description_type"));
 }
 
 bool ProductOptionModule::existProductAndOption(const QString& xml_string)
 {
-    bool exist = false;
-    QString product_code;
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-
-    xml = new XmlConfig();
-
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return exist;
-    }
-
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    xml->delDomain();
-    product_code = xml->readString("product_code[0]");
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return false;
+    }
+
+    xml.delDomain();
+    QString product_code = xml.readString("product_code[0]");
     if (product_code.isEmpty()) {
-        cerr << "empty product code " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return exist;
+        cerr << "Empty product code "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return false;
     }
 
-    xml->setDomain("options[0].option[0]");
-    if (xml->readString("option_type").isEmpty()) {
-        cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return exist;
+    xml.setDomain("options[0].option[0]");
+    if (xml.readString("option_type").isEmpty()) {
+        cerr << "Empty option type "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return false;
     }
 
-    if (xml->readString("option_name").isEmpty()) {
-        cerr << "empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
-        return exist;
+    if (xml.readString("option_name").isEmpty()) {
+        cerr << "Empty option name "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return false;
     }
 
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    exist = db->existProductAndOption(product_code, xml->readString("option_type"),
-        xml->readString("option_name"));
-    delete db;
-    delete xml;
-    return exist;
+    return database.existProductAndOption(
+        product_code, xml.readString("option_type"),
+        xml.readString("option_name"));
 }
 
 QString ProductOptionModule::getProductOptions(const QString& product_code)
 {
-    QString xml_string;
-    XmlConfig* xml = 0;
-    QList<ProductOptionData*>* options = 0;
-    ProductOptionData* option = 0;
-    ProductOptionsModuleDB* db = 0;
-    int index, count;
-
-    xml_string = "";
     if (product_code.isEmpty()) {
-        cerr << "empty product code " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        return xml_string;
-    }
-
-    db = 0;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    options = db->getProductOptions(product_code);
-    delete db;
-
-    if (!options) {
-        cerr << "the product does not have options " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        return xml_string;
-    }
-
-    xml = new XmlConfig();
-    xml->delDomain();
-
-    xml->createElementSetDomain("options");
-
-    count = options->count();
-    for (index = 0; index < count; index++) {
-        option = options->at(index);
-        xml->createElementSetDomain("option");
-
-        xml->createElement("option_type", option->option_type);
-        xml->createElement("description_type", option->description_type);
-        xml->createElement("option_name", option->option_name);
-        xml->createElement("description_option", option->description_option);
-        xml->createElement("value", QString::number(option->value));
-
-        if (option->is_default)
-            xml->createElement("default", "true");
-        else
-            xml->createElement("default", "false");
-
-        xml->releaseDomain("option", false);
-    }
-    xml->releaseDomain("options", true);
-    delete options;
-    delete option;
-
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+        cerr << "Empty product code "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return QString {};
     }
-    xml_string = xml->toString();
-    delete xml;
 
-    return xml_string;
+    const QVector<ProductOptionData>&
+        options
+        = database.getProductOptions(product_code);
+    if (options.isEmpty()) {
+        cerr << "The product does not have options "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return QString {};
+    }
+
+    XmlConfig xml;
+    xml.delDomain();
+    xml.createElementSetDomain("options");
+    for (const ProductOptionData& option : options) {
+        xml.createElementSetDomain("option");
+
+        xml.createElement("option_type", option.option_type);
+        xml.createElement("description_type", option.description_type);
+        xml.createElement("option_name", option.option_name);
+        xml.createElement("description_option", option.description_option);
+        xml.createElement("value", QString::number(option.value));
+
+        if (option.is_default)
+            xml.createElement("default", "true");
+        else
+            xml.createElement("default", "false");
+
+        xml.releaseDomain("option", false);
+    }
+    xml.releaseDomain("options", true);
+
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return QString {};
+    }
+    return xml.toString();
 }
 
 bool ProductOptionModule::insertOptionsToProduct(const QString& xml_string)
 {
-    QString sql, product_code;
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-    int index, count;
-
-    xml = new XmlConfig();
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
 
-    xml->delDomain();
-    product_code = xml->readString("product_code");
-    xml->setDomain("options");
-    count = xml->howManyTags("option");
+    xml.delDomain();
+    QString product_code = xml.readString("product_code");
+    xml.setDomain("options");
+    for (auto i = 0; i < xml.howManyTags("option"); i++) {
+        xml.setDomain("option[" + QString::number(i) + "]");
 
-    for (index = 0; index < count; index++) {
-        xml->setDomain("option[" + QString::number(index) + "]");
-
-        if (xml->readString("option_type").isEmpty()) {
-            xml->releaseDomain("option", true);
+        if (xml.readString("option_type").isEmpty()
+            || xml.readString("option_name").isEmpty()
+            || product_code.isEmpty()) {
+            xml.releaseDomain("option", true);
             continue;
         }
 
-        if (xml->readString("option_name").isEmpty()) {
-            xml->releaseDomain("option", true);
+        if (xml.readString("value").isEmpty()) {
+            xml.releaseDomain("value", true);
             continue;
         }
 
-        if (xml->readString("value").isEmpty()) {
-            xml->releaseDomain("value", true);
-            continue;
-        }
+        if (!database.existOptionType(xml.readString("option_type"))
+            && !database.insertOptionType(
+                xml.readString("option_type"),
+                xml.readString("description_type")))
+            return false;
 
-        if (product_code.isEmpty()) {
-            xml->releaseDomain("option", true);
-            continue;
-        }
+        if (!database.existOption(xml.readString("option_type"), xml.readString("option_name"))
+            && !database.insertOption(xml.readString("option_type"), xml.readString("option_name"),
+                xml.readString("description_option")))
+            return false;
 
-        if (db) {
-            db = 0;
-            delete db;
-        }
-        db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-
-        if (!db->existOptionType(xml->readString("option_type")))
-            if (!db->insertOptionType(xml->readString("option_type"), xml->readString("description_type"))) {
-                delete db;
-                delete xml;
-                return false;
-            }
-
-        if (!db->existOption(xml->readString("option_type"), xml->readString("option_name")))
-            if (!db->insertOption(xml->readString("option_type"), xml->readString("option_name"),
-                    xml->readString("description_option"))) {
-                delete db;
-                delete xml;
-                return false;
-            }
-
-        if (!db->insertOptionToProduct(product_code, xml->readString("option_type"),
-                xml->readString("option_name"),
-                (xml->readString("value")).toDouble(),
-                xml->readString("default"))) {
-            delete db;
-            delete xml;
+        if (!database.insertOptionToProduct(product_code, xml.readString("option_type"),
+                xml.readString("option_name"),
+                (xml.readString("value")).toDouble(),
+                xml.readString("default"))) {
             return false;
         }
-
-        delete db;
-        xml->releaseDomain("option");
+        xml.releaseDomain("option");
     }
-    xml->releaseDomain("options", false);
-    delete xml;
+    xml.releaseDomain("options", false);
     return true;
 }
 
 bool ProductOptionModule::updateOptionsToProduct(const QString& xml_string)
 {
-    QString product_code, aux;
-    XmlConfig* xml = 0;
-    ProductOptionsModuleDB* db = 0;
-    int index, count;
-
-    xml = new XmlConfig();
-    if (!xml->readXmlFromString(xml_string)) {
-        cerr << "cannot convert string into xml" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+    XmlConfig xml;
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
         return false;
     }
-    xml->delDomain();
 
-    product_code = xml->readString("product_code");
+    xml.delDomain();
+    QString product_code = xml.readString("product_code");
     if (product_code.isEmpty()) {
-        cerr << "empty product code " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        delete xml;
+        cerr << "Empty product code "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
         return false;
     }
-    xml->setDomain("options");
 
-    count = xml->howManyTags("option");
-    for (index = 0; index < count; index++) {
-        xml->setDomain("option[" + QString::number(index) + "]");
+    xml.setDomain("options");
+    for (auto i = 0; i < xml.howManyTags("option"); i++) {
+        xml.setDomain("option[" + QString::number(i) + "]");
 
-        if (xml->readString("option_type").isEmpty()) {
-            cerr << "empty option type " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-            xml->releaseDomain("option", true);
+        if (xml.readString("option_type").isEmpty()) {
+            cerr << "Empty option type "
+                 << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+            xml.releaseDomain("option", true);
             continue;
         }
 
-        if (xml->readString("option_name").isEmpty()) {
-            cerr << "empty option name " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-            xml->releaseDomain("option", true);
+        if (xml.readString("option_name").isEmpty()) {
+            cerr << "Empty option name "
+                 << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+            xml.releaseDomain("option", true);
             continue;
         }
 
-        if (xml->readString("value").isEmpty()) {
-            cerr << "empty option value " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-            xml->releaseDomain("option", true);
+        if (xml.readString("value").isEmpty()) {
+            cerr << "Empty option value "
+                 << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+            xml.releaseDomain("option", true);
             continue;
         }
 
-        db = 0;
-        db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-
-        if (!db->existOptionType(xml->readString("option_type")))
-            if (!db->insertOptionType(xml->readString("option_type"), xml->readString("description_type"))) {
-                delete xml;
-                delete db;
-                return false;
-            }
-
-        if (!db->existOption(xml->readString("option_type"), xml->readString("option_name")))
-            if (!db->insertOption(xml->readString("option_type"), xml->readString("option_name"),
-                    xml->readString("description_option"))) {
-                delete xml;
-                delete db;
-                return false;
-            }
-
-        if (!db->updateOptionToProduct(product_code, xml->readString("option_type"),
-                xml->readString("option_name"), xml->readString("value").toDouble(),
-                xml->readString("default"))) {
-            delete xml;
-            delete db;
+        if (!database.existOptionType(xml.readString("option_type"))
+            && !database.insertOptionType(
+                xml.readString("option_type"),
+                xml.readString("description_type"))) {
             return false;
         }
 
-        delete db;
+        if (!database.existOption(
+                xml.readString("option_type"),
+                xml.readString("option_name"))
+            && !database.insertOption(
+                xml.readString("option_type"),
+                xml.readString("option_name"),
+                xml.readString("description_option"))) {
+            return false;
+        }
+
+        if (!database.updateOptionToProduct(
+                product_code,
+                xml.readString("option_type"),
+                xml.readString("option_name"),
+                xml.readString("value").toDouble(),
+                xml.readString("default"))) {
+            return false;
+        }
     }
-    delete xml;
     return true;
 }
 
 bool ProductOptionModule::deleteOptionsToProduct(const QString& product_code, const QString& option_type, const QString& option_name)
 {
-    bool ret = false;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    ret = db->deleteOptionToProduct(product_code, option_type, option_name);
-    delete db;
-    return ret;
+    return database.deleteOptionToProduct(product_code, option_type, option_name);
 }
 
-QString ProductOptionModule::getStringXmlOption(ProductOptionData* option)
+QString ProductOptionModule::getStringXmlOption(const ProductOptionData& option)
 {
-    XmlConfig* xml = 0;
-    QString xml_string;
+    XmlConfig xml;
+    xml.delDomain();
+    xml.createElementSetDomain("options");
+    xml.createElementSetDomain("option");
+    xml.createElement("option_type", option.option_type);
+    xml.createElement("description_type", option.description_type);
+    xml.createElement("option_name", option.option_name);
+    xml.createElement("description_option", option.description_option);
+    xml.createElement("value", QString::number(option.value));
 
-    xml_string = "";
-
-    xml = new XmlConfig();
-    xml->delDomain();
-
-    xml->createElementSetDomain("options");
-    xml->createElementSetDomain("option");
-    xml->createElement("option_type", option->option_type);
-    xml->createElement("description_type", option->description_type);
-    xml->createElement("option_name", option->option_name);
-    xml->createElement("description_option", option->description_option);
-    xml->createElement("value", QString::number(option->value));
-
-    if (option->is_default)
-        xml->createElement("default", "t");
+    if (option.is_default)
+        xml.createElement("default", "t");
     else
-        xml->createElement("default", "f");
+        xml.createElement("default", "f");
 
-    xml->releaseDomain("option", true);
-    xml->releaseDomain("option", true);
+    xml.releaseDomain("option", true);
+    xml.releaseDomain("option", true);
 
-    if (!xml->validateXmlWithDTD(OPTIONS_DTD, true)) {
-        cerr << "xml does not validate against DTD" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
-        xml->debug();
-        delete xml;
-        return xml_string;
+    if (!xml.validateXmlWithDTD(OPTIONS_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        xml.debug();
+        return QString {};
     }
 
-    xml_string = xml->toString();
-    delete xml;
-    return xml_string;
+    return xml.toString();
 }
 
 void ProductOptionModule::setAllProductOptionValue(const QString& option_type, const QString& option_name, const QString& value)
 {
-    bool ok;
-    ProductOptionsModuleDB* db {};
-    // check if the value is correct.
+    bool ok { false };
     value.toDouble(&ok);
     if (!ok)
         return;
 
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    db->setAllProductOptionValue(option_type, option_name, value);
-    delete db;
+    database.setAllProductOptionValue(option_type, option_name, value);
 }
 
 void ProductOptionModule::updateAllProductOptionValue(const QString& option_type, const QString& option_name, const QString& value)
 {
-    bool ok;
-    ProductOptionsModuleDB* db {};
-    // check if the value is correct.
+    bool ok { false };
     value.toDouble(&ok);
     if (!ok)
         return;
-    db = new ProductOptionsModuleDB(OPTION_CONNECTION_NAME, OPTION_PATH_FILE);
-    db->updateAllProductOptionValue(option_type, option_name, value);
-    delete db;
+    database.updateAllProductOptionValue(option_type, option_name, value);
 }

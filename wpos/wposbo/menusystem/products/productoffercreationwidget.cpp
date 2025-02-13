@@ -1,14 +1,9 @@
-/***************************************************************************
-                          bsladdofferwidget.cpp  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright             : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  productoffercreationwidget.cpp
+// birth     :  6/2/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "productoffercreationwidget.h"
 #include "menusystem/utils.h"
@@ -46,7 +41,7 @@ const QString& OFFER_ICON_PATH = "controls32:";
 const double ICON_SIZE = 30.00;
 const int MAX_OFFER_TYPES = 10;
 
-static const QString& XML_DESCRIPTION { "xmldocs:mainscreen_description.xml" };
+static const QString& XML_DESCRIPTION { "xmldocs:wposbo_main_screen.xml" };
 
 ProductOfferCreationWidget::ProductOfferCreationWidget(
     double _product_price,

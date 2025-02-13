@@ -1,14 +1,10 @@
-/***************************************************************************
-                          nprofitreportwidgetinterface.h  -  description
-                             -------------------
-    begin                : Mon may 5 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
+// file      :  reportinterface.h
+// birth     :  5/11/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
 #ifndef REPORTINTERFACE_H
 #define REPORTINTERFACE_H
 

@@ -49,8 +49,8 @@ public:
     ProductTemplate& tmplate() const { return *tpl_; }
     Uom& uom() const { return tpl_->uom(); }
 
-    void setImageFile(const string& imageFile){  imageFile_ = imageFile ;}
-    const string& getImageFile() const { return imageFile_ ; }
+    void setImageFile(const string& imageFile){  image_file_ = imageFile ;}
+    const string& getImageFile() const { return image_file_ ; }
 
     void enable(){ setActive(true); }
     void disable(){ setActive(false); }
@@ -78,7 +78,7 @@ private:
     string name_;
     string code_;
     mutable double price_{std::numeric_limits<double>::max()};
-    string imageFile_;
+    string image_file_;
     bool active_{true};
 };
 

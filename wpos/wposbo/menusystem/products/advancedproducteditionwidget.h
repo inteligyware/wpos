@@ -1,14 +1,9 @@
-/***************************************************************************
-                          ndelproductwidget.h  -  description
-                             -------------------
-    begin                : lun may 3 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  advancedproducteditionwidget.h
+// birth     :  5/3/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef NDELPRODUCTWIDGET_H
 #define NDELPRODUCTWIDGET_H
@@ -25,11 +20,14 @@ class AdvancedProductEditionWidget : public QWidget,
 public:
     enum ProductColumn {
         Icon = 0,
-        Name = 1,
-        Code = 2
+        Code = 1,
+        Name = 2
     };
 
-    explicit AdvancedProductEditionWidget(ProductModule* product_model, QWidget* parent = 0, const QString& name = QString {});
+    explicit AdvancedProductEditionWidget(
+        ProductModule* product_model,
+        QWidget* parent = 0,
+        const QString& name = QString {});
     ~AdvancedProductEditionWidget() = default;
 
 public slots:
@@ -47,20 +45,27 @@ public slots:
 protected slots:
     void startShowing();
     void setProgressSlot(int num, const QString& product);
+    void enableOkButton();
 
 signals:
     void progressSignal(int num, const QString& product);
 
 protected:
     virtual void showEvent(QShowEvent* e) override;
-    void loadList();
-    bool isItemSelected();
+    void fetchProducts();
+
     QTreeWidgetItem* selectedItem() const;
 
     inline ProductModule& productModel() const
     {
         return *product_model;
     }
+
+private:
+    void setupWidgets();
+    void setWidgetsIcons();
+    void connectWidgets();
+    bool isItemSelected();
 
 private:
     ProductModule* product_model;

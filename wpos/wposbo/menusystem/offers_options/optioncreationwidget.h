@@ -1,14 +1,9 @@
-/***************************************************************************
-                          naddoptionwidget.h  -  description
-                             -------------------
-    begin                : mar abr 27 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  optioncreationwidget.h
+// birth     :  4/27/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef OPTION_CREATION_WIDGET_H
 #define OPTION_CREATION_WIDGET_H

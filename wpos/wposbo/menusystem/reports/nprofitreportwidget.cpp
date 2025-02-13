@@ -1,18 +1,9 @@
-/***************************************************************************
-                          nprofitreportwidget.cpp  -  description
-                             -------------------
-    begin                : lun abr 19 2004
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-All the viewer repor has been taken from KGhostview so it's under GPL2 license and
-the code hasn't been modified.
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  nprofitreportwidget.cpp
+// birth     :  4/19/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "nprofitreportwidget.h"
 #include "nprofitreportwidget_adaptor.h"
@@ -43,7 +34,7 @@ the code hasn't been modified.
 #include <QStatusBar>
 #include <QStringList>
 #include <QTabBar>
-#include <qdatetime.h>
+#include <QDateTime>
 
 #define TIMER_SLOT 500
 
@@ -55,14 +46,8 @@ the code hasn't been modified.
 #define USERS_LIST_DTD "dtddocs:users_userslist.dtd"
 #define USERS_DTD "dtddocs:users_user.dtd"
 
-#define INTERFACE_NAME "ProfitReport"
-
 #include <iostream>
-namespace std {
-}
 using namespace std;
-
-// const QString NProfitReportWidget::DBusObjectPath  = QString{"/wpos/wposbo/ProfitReport"};
 
 NProfitReportWidget::NProfitReportWidget(
     UserModule* user_module,
@@ -137,18 +122,27 @@ void NProfitReportWidget::init()
     connect(button_group, QOverload<QAbstractButton*>::of(&QButtonGroup::buttonClicked),
         this, &NProfitReportWidget::toggleStates);
 
-    connect(advanced_button, &QPushButton::toggled, this, &NProfitReportWidget::advancedButtonToggleSlot);
-    connect(up_employee_button, &QPushButton::clicked, this, &NProfitReportWidget::upUsersSlot);
-    connect(down_employee_button, &QPushButton::clicked, this, &NProfitReportWidget::downUsersSlot);
-    connect(employee_groupbox, &QGroupBox::toggled, this, &NProfitReportWidget::usersBoxCheckedSlot);
-    connect(employee_listview, &QTreeWidget::itemSelectionChanged, this, &NProfitReportWidget::selectedUserSlot);
+    connect(advanced_button, &QPushButton::toggled,
+            this, &NProfitReportWidget::advancedButtonToggleSlot);
+    connect(up_employee_button, &QPushButton::clicked,
+            this, &NProfitReportWidget::upUsersSlot);
+    connect(down_employee_button, &QPushButton::clicked,
+            this, &NProfitReportWidget::downUsersSlot);
+    connect(employee_groupbox, &QGroupBox::toggled,
+            this, &NProfitReportWidget::usersBoxCheckedSlot);
+    connect(employee_listview, &QTreeWidget::itemSelectionChanged,
+            this, &NProfitReportWidget::selectedUserSlot);
 
-    connect(ok_button, &QPushButton::clicked, this, &NProfitReportWidget::acceptSlot);
-    connect(exit_button, &QPushButton::clicked, this, &NProfitReportWidget::exitFromViewSlot);
-    connect(save_report_button, &QPushButton::clicked, this, &NProfitReportWidget::saveReportSlot);
+    connect(ok_button, &QPushButton::clicked,
+            this, &NProfitReportWidget::acceptSlot);
+    connect(exit_button, &QPushButton::clicked,
+            this, &NProfitReportWidget::exitFromViewSlot);
+    connect(save_report_button, &QPushButton::clicked,
+            this, &NProfitReportWidget::saveReportSlot);
 
     //    connectDCOPSignal(0,0,"reportCreated(QString)","reportSlot(QString)", false); //@benes
-    connect(this, &NProfitReportWidget::reportCreated, &NProfitReportWidget::reportSlot); //@benes
+    connect(this, &NProfitReportWidget::reportCreated,
+            &NProfitReportWidget::reportSlot); //@benes
 }
 
 void NProfitReportWidget::showEvent(QShowEvent* e)
@@ -191,13 +185,14 @@ void NProfitReportWidget::clear()
 
 void NProfitReportWidget::getUsers()
 {
-
     employee_listview->clear();
     QString xml_string = mod->usersList(true);
     XmlConfig xml;
     xml.readXmlFromString(xml_string);
-    if (!xml.wellFormed() || !xml.validateXmlWithDTD(USERS_LIST_DTD, true)) {
-        cerr << "XML parse error or XML does not validate against dtd" << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+    if (!xml.wellFormed()
+        || !xml.validateXmlWithDTD(USERS_LIST_DTD, true)) {
+        cerr << "XML parse error or XML does not validate against dtd"
+             << __PRETTY_FUNCTION__ << ": " << __LINE__ << '\n';
         return;
     }
 
@@ -220,6 +215,18 @@ void NProfitReportWidget::getUsers()
     ok_button->setEnabled(checkAllValues());
 }
 
+bool NProfitReportWidget::doIsClosing() const
+{
+    return getActualReport() == "cierres_button";
+}
+
+QString NProfitReportWidget::getActualReport() const
+{
+    auto button = button_group->checkedButton();
+    if (button) return button->objectName();
+    return QString {};
+}
+
 void NProfitReportWidget::toggleStates(QAbstractButton* button)
 {
     button->setBackgroundRole(QPalette::Button);
@@ -233,19 +240,6 @@ void NProfitReportWidget::toggleStates(QAbstractButton* button)
         employee_groupbox->setEnabled(false);
     } else
         employee_groupbox->setEnabled(true);
-}
-
-QString NProfitReportWidget::getActualReport()
-{
-    auto button = button_group->checkedButton();
-    if (button)
-        return button->objectName();
-    return QString {};
-}
-
-bool NProfitReportWidget::doIsClosing()
-{
-    return getActualReport() == "cierres_button";
 }
 
 void NProfitReportWidget::advancedButtonToggleSlot(bool on)
@@ -262,15 +256,15 @@ void NProfitReportWidget::advancedButtonToggleSlot(bool on)
 
 void NProfitReportWidget::usersBoxCheckedSlot(bool on)
 {
-    //        employee_listview->clear();
-    //        if (employee_groupbox->isChecked()){
-    //                getUsers();
-    ok_button->setEnabled(checkAllValues());
+    // employee_listview->clear();
+    // if (employee_groupbox->isChecked()){
+    //     getUsers();
+        ok_button->setEnabled(checkAllValues());
+    // }
 }
 
 bool NProfitReportWidget::checkAllValues()
 {
-
     return !getActualReport().isEmpty()
         && employee_groupbox->isChecked()
         && !employee_listview->selectedItems().isEmpty();
@@ -339,7 +333,6 @@ void NProfitReportWidget::acceptSlot()
         start_date = init_datepicker->date().toString("dd/MM/yyyy");
         end_date = end_datepicker->date().toString("dd/MM/yyyy");
     }
-
     else
         doSelectReport(informe, start_date, end_date);
 
@@ -353,14 +346,13 @@ void NProfitReportWidget::acceptSlot()
     // idem
     //     if (!client->call("dcopreports","DCOPReportReportman","createReport(QString,QString,QString,QString)",data, reply_type,reply_data))
     //     {
-    //         cerr << "problems while trying to call dcopreports" << endl;
+    //         cerr << "problems while trying to call dcopreports" << '\n';
     //         QString text = tr("Ha fallado la llamada al modulo de informes.\n");
     //         QMessageBox::warning(this,tr("ha fallado la generacion de informes"),text);
     //     }
 
     bool ret = false;
-    if (reply_type == "bool")
-        reply >> ret;
+    if (reply_type == "bool") reply >> ret;
 
     //    if (!ret){
     //        QString text = tr("The call to the report module has failed.\n");
@@ -371,12 +363,9 @@ void NProfitReportWidget::acceptSlot()
 
     last_report_name = informe;
 
-    if (!start_date.isEmpty())
-        last_report_name += "_" + start_date;
-    if (!end_date.isEmpty())
-        last_report_name += "_" + end_date;
-    if (!employee_id.isEmpty())
-        last_report_name += "_" + employee_id;
+    if (!start_date.isEmpty()) last_report_name += "_" + start_date;
+    if (!end_date.isEmpty())   last_report_name += "_" + end_date;
+    if (!employee_id.isEmpty()) last_report_name += "_" + employee_id;
 
     last_report_name += ".pdf";
     last_report_name.replace('/', "-");
@@ -384,13 +373,16 @@ void NProfitReportWidget::acceptSlot()
     stack->setCurrentWidget(progress_page);
     progress_bar->setValue(0);
     timer->start(5);
-    connect(timer, &QTimer::timeout, this, &NProfitReportWidget::timerSlot);
+    connect(
+        timer, &QTimer::timeout,
+        this, &NProfitReportWidget::timerSlot);
     pos = 0;
     emit reportCreated(last_report_name); //@benes
 }
 
 void NProfitReportWidget::doSelectReport(
-    QString& start_date, QString& end_date,
+    QString& start_date,
+    QString& end_date,
     const QString& informe)
 {
     QDate aux_date, date;
@@ -437,7 +429,12 @@ void NProfitReportWidget::doSelectReport(
     }
 }
 
-void NProfitReportWidget::doSetOutputStream(QDataStream& out_stream, const QString& informe, const QString& start_date, const QString& end_date, const QString& employee_id)
+void NProfitReportWidget::doSetOutputStream(
+    QDataStream& out_stream,
+    const QString& informe,
+    const QString& start_date,
+    const QString& end_date,
+    const QString& employee_id)
 {
     out_stream << informe;
     out_stream << QString(start_date);
@@ -454,8 +451,10 @@ void NProfitReportWidget::timerSlot()
 
 void NProfitReportWidget::reportSlot(QString file)
 {
-    file = "/home/benes/Workspace/projets/wpos/wpos/doc/ntpv.pdf";
-    QObject::disconnect(timer, &QTimer::timeout, this, &NProfitReportWidget::timerSlot);
+    file = "share/wpos/wposbo/wposbo.pdf";
+    QObject::disconnect(
+        timer, &QTimer::timeout,
+        this, &NProfitReportWidget::timerSlot);
     progress_bar->setValue(0);
     timer->stop();
 
@@ -465,8 +464,8 @@ void NProfitReportWidget::reportSlot(QString file)
         startShowing();
         return;
     }
-    last_report_file = file;
 
+    last_report_file = file;
     if (checkStickModule())
         save_report_button->show();
     else
@@ -498,7 +497,7 @@ void NProfitReportWidget::saveReportSlot()
 
     //    if (!client->call("dcopstick", "dcopstick","saveReportToStick(QString, QString)",
     //                      data,reply_type,reply_data)){
-    //        cerr << "problems while trying to call dcopstick module" << endl;
+    //        cerr << "problems while trying to call dcopstick module" << '\n';
     //        QString text = tr("Ha fallado la llamada al modulo de guardar a memory stick .\n");
     //        QMessageBox::warning(this,tr("ha fallado la operacion de guardar en el stick"),text,0);
     //    }

@@ -365,15 +365,15 @@ set_target_properties (${MAIN_TARGET} PROPERTIES
     VERSION ${PROJECT_VERSION} SOVERSION ${PROJECT_VERSION_PATCH}
 )
 
-# install(TARGETS ${MAIN_TARGET}
-#     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-# )
+install(TARGETS ${MAIN_TARGET}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
-# qt_generate_deploy_app_script(
-#    TARGET ${MAIN_TARGET}
-#    OUTPUT_SCRIPT deploy_script
-#    NO_UNSUPPORTED_PLATFORM_ERROR
-# )
+qt_generate_deploy_app_script(
+   TARGET ${MAIN_TARGET}
+   OUTPUT_SCRIPT deploy_script
+   NO_UNSUPPORTED_PLATFORM_ERROR
+)
 
-# install(SCRIPT ${deploy_script})
+install(SCRIPT ${deploy_script})

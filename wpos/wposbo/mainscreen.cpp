@@ -38,7 +38,8 @@ MainScreen::MainScreen(QWidget* parent)
 
 void MainScreen::setupApplication()
 {
-    setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+    // setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+    setMaximumWidth(800);
     auto configFile = cfg::xmlFileByKey(cfg::XMLKey::Buttons);
     if (QFile::exists(configFile)) {
         XmlConfig xml(configFile);

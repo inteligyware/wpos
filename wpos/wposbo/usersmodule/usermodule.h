@@ -9,7 +9,9 @@
 #define USERMODULE_H
 
 #include "usermoduleinterface.h"
-#include <QList>
+#include "database/usersmoduledb.h"
+#include <wposcore/config.h>
+#include <QtCore/QList>
 #include <QtCore/QObject>
 
 class QString;
@@ -25,7 +27,7 @@ public:
     static const QString DBusObjectPath;
 
     explicit UserModule(QObject* parent = 0, const QString& name = QString {});
-    ~UserModule() = default;
+    ~UserModule() { database.disConnect();}
 
     QString getInterfaceName();
     QString getEnrollMethodName();
@@ -42,7 +44,7 @@ public slots:
     Q_SCRIPTABLE QString usersList(bool all = false) override;
     Q_SCRIPTABLE QString usersExtendedList(bool all = false) override;
     Q_SCRIPTABLE QString getUserInfo(const QString& employee_id) override;
-    Q_SCRIPTABLE void enrollUserData(const QString& xml) override;
+    Q_SCRIPTABLE void enrollUserData(const QString& xml_string) override;
 
     Q_SCRIPTABLE bool delUserFingerprints(const QString&) override;
 
@@ -81,6 +83,8 @@ signals:
 
 protected:
     UserData readUserFromXml(const QString& string_xml);
+private:
+    UsersModuleDB database{"UsersModuleDB", cfg::xmlFileByKey(cfg::XMLKey::Database)};
 };
 
 #endif

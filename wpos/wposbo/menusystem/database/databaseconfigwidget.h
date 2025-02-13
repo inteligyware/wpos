@@ -1,14 +1,11 @@
-/***************************************************************************
-                          bslddbbwidget.h  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
+// file      :  databaseconfigwidget.h
+// birth     :  6/1/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
-@author Carlos Manzanedo Rueda
 
-%LICENCIA%
- ***************************************************************************/
 #ifndef DATABASECONFIGWIDGET_H
 #define DATABASECONFIGWIDGET_H
 

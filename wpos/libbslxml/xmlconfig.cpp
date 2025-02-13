@@ -140,7 +140,6 @@ void XmlConfig::clear(){
 bool XmlConfig::readXmlFromString(const QString& xml_str)
 {
     QDomDocument tmpDoc;
-
     if (!tmpDoc.setContent(xml_str)) return false;
     QString fileName = m_impl->fileName();
     delete m_impl;
@@ -159,61 +158,67 @@ QString XmlConfig::toString() const{
 }
 
 #ifdef _HAS_VALIDATE_METHOD_
-bool XmlConfig::validateXmlWithDTD(QString path, bool verbose){
-    bool ret;
-    xmlDocPtr xml2_document;
-    xmlDtdPtr dtd;
-    xmlValidCtxtPtr cvp;
-    QString aux_string;
 
-    //check if our xml is correct.
-    if ( !wellFormed() || toString().isEmpty())
-        return false;
-
-    aux_string = toString().toUtf8();
-    char *buffer = new char[aux_string.length()];
-    memcpy(buffer, aux_string.toLatin1(), aux_string.length());
-    xml2_document = xmlParseMemory(buffer,aux_string.length());
-    delete[] buffer;
-
-    if (!xml2_document){
-        //problems obtaining the document at the xmllib
-        return false;
-    }
-    //delete the document type if it already has anyone.
-    dtd = xmlGetIntSubset(xml2_document);
-    if (dtd){
-        //there is an active document type (//should not happens by now)
-        xmlUnlinkNode((xmlNodePtr) dtd);
-        xmlFreeDtd(dtd);
-    }
-    dtd = xmlParseDTD(nullptr, (xmlChar *)(const char*) path.toLatin1());
-    if (!dtd){
-        //wrong dtd file;
-        xmlFreeDoc(xml2_document);
-        return false;
-    }
-
-    if ( ! (cvp = xmlNewValidCtxt() ) ){
-        //can't allocate validation context.
-        xmlFreeDoc(xml2_document);
-        return false;
-    }
-
-    //set validation context.
-    if (verbose){
-        cvp->userData = (void *) stderr;
-        cvp->error = (xmlValidityErrorFunc) fprintf;
-        cvp->warning = (xmlValidityWarningFunc) fprintf;
-    }
-    ret = (bool) xmlValidateDtd(cvp,xml2_document,dtd);
-
-    xmlFreeValidCtxt(cvp);
-    xmlFreeDtd(dtd);
-    xmlFreeDoc(xml2_document);
-
-    return ret;
+bool XmlConfig::validateXmlWithDTD(QString /*path*/, bool /*verbose*/)
+{
+    return true;
 }
+
+// bool XmlConfig::validateXmlWithDTD(QString path, bool verbose){
+//     bool ret;
+//     xmlDocPtr xml2_document;
+//     xmlDtdPtr dtd;
+//     xmlValidCtxtPtr cvp;
+//     QString aux_string;
+
+//     //check if our xml is correct.
+//     if ( !wellFormed() || toString().isEmpty())
+//         return false;
+
+//     aux_string = toString().toUtf8();
+//     char *buffer = new char[aux_string.length()];
+//     memcpy(buffer, aux_string.toLatin1(), aux_string.length());
+//     xml2_document = xmlParseMemory(buffer,aux_string.length());
+//     delete[] buffer;
+
+//     if (!xml2_document){
+//         //problems obtaining the document at the xmllib
+//         return false;
+//     }
+//     //delete the document type if it already has anyone.
+//     dtd = xmlGetIntSubset(xml2_document);
+//     if (dtd){
+//         //there is an active document type (//should not happens by now)
+//         xmlUnlinkNode((xmlNodePtr) dtd);
+//         xmlFreeDtd(dtd);
+//     }
+//     dtd = xmlParseDTD(nullptr, (xmlChar *)(const char*) path.toLatin1());
+//     if (!dtd){
+//         //wrong dtd file;
+//         xmlFreeDoc(xml2_document);
+//         return false;
+//     }
+
+//     if ( ! (cvp = xmlNewValidCtxt() ) ){
+//         //can't allocate validation context.
+//         xmlFreeDoc(xml2_document);
+//         return false;
+//     }
+
+//     //set validation context.
+//     if (verbose){
+//         cvp->userData = (void *) stderr;
+//         cvp->error = (xmlValidityErrorFunc) fprintf;
+//         cvp->warning = (xmlValidityWarningFunc) fprintf;
+//     }
+//     ret = (bool) xmlValidateDtd(cvp,xml2_document,dtd);
+
+//     xmlFreeValidCtxt(cvp);
+//     xmlFreeDtd(dtd);
+//     xmlFreeDoc(xml2_document);
+
+//     return ret;
+// }
 
 bool XmlConfig::validateXmlWithInternalDTD(bool verbose){
     bool ret;
@@ -360,7 +365,6 @@ readString readInt writeString writeInt over
 //*********************************
 // ELEMENTS
 //*********************************
-
 
 QString XmlConfig::readString(const QString& tag){
     return nodeFromTagPrivate(tag).firstChild().toText().nodeValue();

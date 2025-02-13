@@ -1,14 +1,9 @@
-/***************************************************************************
-                          nprodandofferreportwidget.h  -  description
-                             -------------------
-    begin                : jue may 6 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  nprodandofferreportwidget.h
+// birth     :  6/6/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef NPRODANDOFFERREPORTWIDGET_H
 #define NPRODANDOFFERREPORTWIDGET_H
@@ -17,6 +12,7 @@
 #include "ui_prodandofferreportwidgetbase.h"
 
 #include <QWidget>
+#include <QButtonGroup>
 
 class PdfViewer;
 class UserModule;
@@ -30,15 +26,20 @@ class NProdAndOfferReportWidget : public QWidget,
 
 public:
     const QString DBusObjectPath { "/wpos/wposbo/ProductAndOfferReport" };
-    NProdAndOfferReportWidget(UserModule* user_module, QWidget* parent = 0, const QString& name = QString());
+    explicit NProdAndOfferReportWidget(
+        UserModule* user_module,
+        QWidget* parent = 0,
+        const QString& name = QString{});
     ~NProdAndOfferReportWidget();
 
+signals:
+    void reportCreated(const QString& name);
+
 public slots:
-    virtual void reportSlot(QString) override; // ASYNC
+    Q_SCRIPTABLE virtual void reportSlot(QString) override; // ASYNC
 
 protected slots:
     void clear();
-    void reportButtonClickedSlot();
     virtual void toggleStates(QAbstractButton* button);
 
     void upUsersSlot();
@@ -56,22 +57,30 @@ protected slots:
 
 protected:
     void init();
-    void showEvent(QShowEvent* e);
-    void hideEvent(QHideEvent* e);
+    virtual void showEvent(QShowEvent* e) override;
+    virtual void hideEvent(QHideEvent* e) override;
     virtual bool doIsClosing() const;
-    virtual void doSelectReport(QString& start_date, QString& end_date, const QString& informe = QString());
-    virtual void doSetOutputStream(QDataStream& out_stream, const QString& informe, const QString& start_date, const QString& end_date, const QString& employee_id);
+    virtual void doSelectReport(
+        QString& start_date,
+        QString& end_date,
+        const QString& informe = QString());
+    virtual void doSetOutputStream(
+        QDataStream& out_stream,
+        const QString& informe,
+        const QString& start_date,
+        const QString& end_date,
+        const QString& employee_id);
     void getUsers();
     void startShowing();
 
-    QString getActualReport();
+    QString getActualReport() const;
     bool checkAllValues();
     bool checkReportModule();
     bool checkStickModule();
 
-    UserModule* mod;
-    PdfViewer* part;
-    QTimer* timer;
+    UserModule* mod{};
+    PdfViewer* viewer{};
+    QTimer* timer{};
     QButtonGroup* button_group {};
 
     QString last_report_file;

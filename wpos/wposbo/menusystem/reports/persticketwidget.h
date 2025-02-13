@@ -1,14 +1,9 @@
-/***************************************************************************
-                          persticketwidget.h  -  description
-                             -------------------
-    begin                : mar may 11 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  persticketwidget.h
+// birth     :  5/11/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef PERSTICKETWIDGET_H
 #define PERSTICKETWIDGET_H
@@ -29,7 +24,7 @@ class PersTicketWidget : public QWidget, private Ui::PersTicketsWidgetBase {
     Q_OBJECT
 public:
     explicit PersTicketWidget(QWidget* parent = 0, const QString& name = QString {});
-    ~PersTicketWidget();
+    ~PersTicketWidget(){ database.disConnect(); }
 
 public slots:
     void clear();
@@ -62,11 +57,11 @@ protected:
 private:
     void layoutItems();
 
-    QPixmap null_pixmap { "controls:view_text.png" };
-    QPixmap error_pixmap { "controls:stop.png" };
-    QPixmap anulation_pixmap { "controls:view_text_red.png" };
+    QPixmap null_pixmap     { "controls:view_text.png" };
+    QPixmap error_pixmap    { "controls:stop.png" };
+    QPixmap anulation_pixmap{ "controls:view_text_red.png" };
 
-    HistoricDB database { "HistoricTicketConnection", cfg::xmlFileByKey(cfg::XMLKey::Database) };
+    HistoricDB database { "PersTicketWidget", cfg::xmlFileByKey(cfg::XMLKey::Database) };
     OrderView* order_view {};
     QTimer* timer {};
     int progress_step {};

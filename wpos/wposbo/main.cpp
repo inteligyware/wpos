@@ -16,11 +16,8 @@
 #include <QString>
 
 static const QString& APP_VERSION { "2.0-rc1" };
-static const QString& SPLASH_PIXMAP { "controls:bo_splashscreen.png" };
+static const QString& SPLASH_PIXMAP { "controls:bo_splash.png" };
 
-static const QString CFG_XML_DIR { "etc/wpos/wpos/" };
-static const QString CFG_DTD_DIR { "etc/wpos/wpos/dtds/" };
-static const QString PIXMAP_DIR { "share/wpos/" };
 QSplashScreen* splash {};
 int main(int argc, char* argv[])
 {

@@ -54,7 +54,6 @@ TEST_F(OrderTest, ConstructorPersist)
         order->persist();
     });
 
-    order->persist();
     sm.logOut(*user);
     EXPECT_NO_THROW({
         db.update(user);

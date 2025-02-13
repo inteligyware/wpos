@@ -1,19 +1,9 @@
-/***************************************************************************
-                          shortcutbuttonwidget.h  -  description
-                             -------------------
-    begin                : Sat feb 5 2005
-    copyright            : (C) 2005 by Carlos Manzanedo
-    email                : carlos@napsis.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// file      :  shortcutbuttonwidget.h
+// birth     :  2/5/2005
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef SHORTCUTBUTTONWIDGET_H
 #define SHORTCUTBUTTONWIDGET_H

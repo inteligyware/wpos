@@ -285,15 +285,15 @@ target_link_libraries(${MAIN_TARGET} PUBLIC
     Qt::Core5Compat
 )
 
-# install(TARGETS ${MAIN_TARGET}
-#     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-# )
+install(TARGETS ${MAIN_TARGET}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
 
-# qt_generate_deploy_app_script(
-#    TARGET ${MAIN_TARGET}
-#    OUTPUT_SCRIPT deploy_script
-#    NO_UNSUPPORTED_PLATFORM_ERROR
-# )
+qt_generate_deploy_app_script(
+   TARGET ${MAIN_TARGET}
+   OUTPUT_SCRIPT deploy_script
+   NO_UNSUPPORTED_PLATFORM_ERROR
+)
 
-# install(SCRIPT ${deploy_script})
+install(SCRIPT ${deploy_script})

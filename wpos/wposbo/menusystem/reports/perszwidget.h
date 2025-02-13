@@ -1,14 +1,9 @@
-/***************************************************************************
-                          perszwidget.h  -  description
-                             -------------------
-    begin                : mar may 11 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  perszwidget.h
+// birth     :  5/11/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef PERSZWIDGET_H
 #define PERSZWIDGET_H
@@ -36,7 +31,7 @@ public:
     static const uint DEFAULT_HEIGHT;
 
     explicit PersZWidget(QWidget* parent = 0, const QString& name = QString {});
-    ~PersZWidget() = default;
+    ~PersZWidget() { database.disConnect(); }
 
 public slots:
     void clear();
@@ -63,12 +58,19 @@ protected slots:
     void setEndDateRange(const QDateTime& start);
 
 protected:
+    // enum Section {
+    //     Icon = 0,
+    //     StartDate = 1,
+    //     EndDate = 2,
+    //     Amount = 3,
+    //     EventCode = 4
+    // };
     enum Section {
         Icon = 0,
-        StartDate = 1,
-        EndDate = 2,
-        Amount = 3,
-        EventCode = 4
+        EventCode = 1,
+        Amount = 2,
+        StartDate = 3,
+        EndDate = 4
     };
 
     enum SectionSize {
@@ -92,18 +94,18 @@ protected:
     void printZ(const QString& xml_str);
     void printTicketTotal(const QString& xml_str);
 
-    QString xmlToHtml(XmlConfig* xml);
+    QString xmlToHtml(XmlConfig &xml);
 
-    QString mainSection(XmlConfig* xml);
-    QString productSection(XmlConfig* xml);
-    QString waitersSection(XmlConfig* xml);
-    QString offerSection(XmlConfig* xml);
-    QString optionSection(XmlConfig* xml);
+    QString mainSection(XmlConfig& xml);
+    QString productSection(XmlConfig& xml);
+    QString waitersSection(XmlConfig &xml);
+    QString offerSection(XmlConfig &xml);
+    QString optionSection(XmlConfig &xml);
 
-    bool createMainGraph(XmlConfig* xml, int width = DEFAULT_WIDTH, int height = DEFAULT_WIDTH + 30);
-    bool createWaitersGraph(XmlConfig* xml, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
-    bool createOffersGraph(XmlConfig* xml, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
-    bool createOptionsGraph(XmlConfig* xml, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
+    bool createMainGraph(XmlConfig& xml, int width = DEFAULT_WIDTH, int height = DEFAULT_WIDTH + 30);
+    bool createWaitersGraph(XmlConfig &xml, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
+    bool createOffersGraph(XmlConfig &xml, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
+    bool createOptionsGraph(XmlConfig &xml, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT);
 
     void setupButtons();
     void setupSections();
@@ -116,12 +118,12 @@ private:
     void showHtml(const QString& html_str);
 
 private:
-    HistoricDB database { "GetZetaConnection", cfg::xmlFileByKey(cfg::XMLKey::Database) };
+    HistoricDB database { "PersZWidget", cfg::xmlFileByKey(cfg::XMLKey::Database) };
     QWebEngineView* browser {};
     QTimer* timer {};
     QVBoxLayout* b_layout {};
 
-    QStringList headerLabels { "Icon", "Start Date", "End Date", "Price", "Code" };
+    QStringList headerLabels { "Icon", "Event Code", "Price", "Start Date", "End Date" };
     QString main_graph;
     QString waiters_graph;
     QString offers_graph;

@@ -20,34 +20,21 @@
 
 using namespace std;
 
-HistoricDB::HistoricDB(const QString& connection_name,
-    const QString& hostname,
-    const QString& database,
-    const QString& username,
-    const QString& passwd)
-    : BasicDatabase(connection_name,
-          hostname,
-          database,
-          username,
-          passwd)
-{
-}
+HistoricDB::HistoricDB(const QString& con_name,
+    const QString& host,
+    const QString& db,
+    const QString& user,
+    const QString& pwd)
+    : BasicDatabase(con_name, host, db, user, pwd){}
 
-HistoricDB::HistoricDB(const QString& _connection_name,
-    const QString& configuration_path)
-    : BasicDatabase(_connection_name,
-          configuration_path)
-{
-}
+HistoricDB::HistoricDB(const QString& con_name,
+    const QString& conf_path)
+    : BasicDatabase(con_name,conf_path){}
 
 QVector<TicketResumeData> HistoricDB::getTicketResume(
-    QString start_date,
-    QString end_date)
+    const QString& start_date,
+    const QString& end_date)
 {
-
-    if (!isConnected())
-        return QVector<TicketResumeData>();
-
     QString sql = "SELECT ticket_code, employee_name, employee_id, end_time, total, ticket_state ";
     sql += "FROM get_pers_tickets('" + start_date + "','" + end_date + "');";
 
@@ -59,17 +46,25 @@ QVector<TicketResumeData> HistoricDB::getTicketResume(
     if (error.type() != QSqlError::NoError) {
         switch (error.type()) {
         case QSqlError::ConnectionError:
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
+            cerr << "Database Connection Error in :"
+                 << __PRETTY_FUNCTION__ << ";" << __LINE__
+                 << " " << error.type() << endl;
             break;
         case QSqlError::StatementError:
             cout << "QUERY ERROR: " << sql.toStdString() << endl;
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
+            cerr << "Database Statement Error in :"
+                 << __PRETTY_FUNCTION__ << ";" << __LINE__
+                 << " " << error.type() << endl;
             break;
         case QSqlError::TransactionError:
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
+            cerr << "Database Transaction Error in :"
+                 << __PRETTY_FUNCTION__ << ";" << __LINE__
+                 << " " << error.type() << endl;
             break;
         case QSqlError::UnknownError:
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
+            cerr << "Database Unknown Error in :"
+                 << __PRETTY_FUNCTION__ << ";" << __LINE__
+                 << " " << error.type() << endl;
             break;
         }
     }
@@ -89,55 +84,30 @@ QVector<TicketResumeData> HistoricDB::getTicketResume(
     return resumes;
 }
 
-QList<ZResumeData*>* HistoricDB::getZResume(
+QVector<ZResumeData> HistoricDB::getZResume(
     QString start_date,
     QString end_date)
 {
-
-    QList<ZResumeData*>* resumes = 0;
-    ZResumeData* data = 0;
     double aux_float;
 
-    if (!isConnected())
-        return nullptr;
-
     QString sql = "SELECT start_time, end_time, cash, event_code ";
-    //    sql += "FROM get_z('"+start_date+"','"+end_date+"');";
-    sql += "FROM get_z();";
+       sql += "FROM get_z('"+start_date+"','"+end_date+"');";
+    // sql += "FROM get_z();";
 
     QSqlQuery query(sql, dbHandle());
     if (!query.isActive())
-        return nullptr;
+        return QVector<ZResumeData>{};
 
-    QSqlError error { query.lastError() };
-    if (error.type() != QSqlError::NoError) {
-        switch (error.type()) {
-        case QSqlError::ConnectionError:
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
-            break;
-        case QSqlError::StatementError:
-            cout << "QUERY ERROR: " << sql.toStdString() << endl;
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
-            break;
-        case QSqlError::TransactionError:
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
-            break;
-        case QSqlError::UnknownError:
-            cerr << "Database Connection Error in :" << __PRETTY_FUNCTION__ << ";" << __LINE__ << " " << error.type() << endl;
-            break;
-        }
-    }
-
-    resumes = new QList<ZResumeData*>;
+    QVector<ZResumeData> resumes;
     while (query.next()) {
-        data = new ZResumeData;
-        data->start_date = ((query.value(0)).toDateTime()).toString("dd/MM/yyyy hh:mm");
-        data->end_date = ((query.value(1)).toDateTime()).toString("dd/MM/yyyy hh:mm");
-        aux_float = (query.value(2)).toDouble();
-        data->cash = QString::number(aux_float, 'f', 2);
-        data->cash = (query.value(2)).toString();
-        data->event_code = (query.value(3)).toString();
-        resumes->append(data);
+        ZResumeData data;
+        data.start_date = query.value(0).toDateTime().toString("dd/MM/yyyy hh:mm");
+        data.end_date = query.value(1).toDateTime().toString("dd/MM/yyyy hh:mm");
+        aux_float = query.value(2).toDouble();
+        data.cash = QString::number(aux_float, 'f', 2);
+        data.cash = query.value(2).toString();
+        data.event_code = query.value(3).toString();
+        resumes.emplaceBack(data);
     }
     return resumes;
 }
@@ -269,9 +239,6 @@ XmlConfig HistoricDB::getTicketFromDatabase(int ticket_number)
 
 double HistoricDB::getMoneyInCash()
 {
-    if (!isConnected())
-        return -1;
-
     QString sql = "SELECT sum(quantity) FROM v_cash_movements;";
     QSqlQuery query(sql, dbHandle());
 
@@ -284,25 +251,18 @@ double HistoricDB::getMoneyInCash()
 
 bool HistoricDB::createTempZ(const QString& code)
 {
-    if (!isConnected())
-        return false;
-
     QString sql = "SELECT create_z_view('" + code + "')";
     QSqlQuery query(sql, dbHandle());
     return query.isActive();
 }
 
-bool HistoricDB::getXEmployeeData(XmlConfig* xml)
+bool HistoricDB::getXEmployeeData(XmlConfig& xml)
 {
-
-    if (!xml)
-        return false;
-
-    xml->pushDomain();
-    xml->delDomain();
+    xml.pushDomain();
+    xml.delDomain();
 
     if (!isConnected()) {
-        xml->popDomain();
+        xml.popDomain();
         return false;
     }
 
@@ -311,39 +271,36 @@ bool HistoricDB::getXEmployeeData(XmlConfig* xml)
     QSqlError error { query.lastError() };
     if (!query.isActive() || error.type() != QSqlError::NoError || !query.size()) {
         qDebug() << error.nativeErrorCode() + " : " + error.text();
-        xml->popDomain();
+        xml.popDomain();
         return false;
     }
 
     int i { 0 };
     while (query.next()) {
-        xml->createElementSetDomain("employees.employee[" + QString::number(i) + "]");
+        xml.createElementSetDomain("employees.employee[" + QString::number(i) + "]");
         auto employee_id = query.value(1).toString();
-        xml->createElement("name", query.value(0).toString());
-        xml->createElement("id", employee_id);
-        xml->createElement("num_tickets", query.value(2).toString());
+        xml.createElement("name", query.value(0).toString());
+        xml.createElement("id", employee_id);
+        xml.createElement("num_tickets", query.value(2).toString());
         auto aux_double = query.value(3).toDouble();
-        xml->createElement("total_income", QString::number(aux_double, 'f', 2));
+        xml.createElement("total_income", QString::number(aux_double, 'f', 2));
         getEmployeeProductInvitations(employee_id, xml);
         getEmployeeProductOptions(employee_id, xml);
         auto event_number = getEmployeeEvent(employee_id, "open_cashbox");
-        xml->createElement("event_count[0]", QString::number(event_number));
-        xml->createAttribute("event_count[0]", "type", "open_cashbox");
-        xml->delDomain();
+        xml.createElement("event_count[0]", QString::number(event_number));
+        xml.createAttribute("event_count[0]", "type", "open_cashbox");
+        xml.delDomain();
         i++;
     }
 
-    xml->popDomain();
+    xml.popDomain();
     return true;
 }
 
 int HistoricDB::getEmployeeProductInvitations(
     const QString& employee_id,
-    XmlConfig* xml)
+    XmlConfig &xml)
 {
-    if (!isConnected())
-        return 0;
-
     QString sql = "SELECT offer_type, prod_offer,num_products ";
     sql += "FROM z_employee_offers ";
     sql += "WHERE employee_id='" + employee_id + "' order by offer_type;";
@@ -352,28 +309,24 @@ int HistoricDB::getEmployeeProductInvitations(
     if (!query.isActive() || !query.size())
         return 0;
 
-    xml->pushDomain();
-    xml->createElementSetDomain("offers");
+    xml.pushDomain();
+    xml.createElementSetDomain("offers");
 
     int i = 0;
     while (query.next()) {
-        xml->createElement("offer[" + QString::number(i) + "].type", query.value(0).toString());
-        xml->createElement("offer[" + QString::number(i) + "].name", query.value(1).toString());
-        xml->createElement("offer[" + QString::number(i) + "].count", query.value(2).toString());
+        xml.createElement("offer[" + QString::number(i) + "].type", query.value(0).toString());
+        xml.createElement("offer[" + QString::number(i) + "].name", query.value(1).toString());
+        xml.createElement("offer[" + QString::number(i) + "].count", query.value(2).toString());
         i++;
     }
 
-    xml->releaseDomain("offers");
-    xml->popDomain();
+    xml.releaseDomain("offers");
+    xml.popDomain();
     return 1;
 }
 
-int HistoricDB::getEmployeeProductOptions(const QString& employee_id, XmlConfig* xml)
+int HistoricDB::getEmployeeProductOptions(const QString& employee_id, XmlConfig &xml)
 {
-
-    if (!isConnected())
-        return 0;
-
     QString sql = "SELECT option_type, prod_option,num_products,total ";
     sql += "FROM z_employee_options ";
     sql += "WHERE employee_id='" + employee_id + "' order by option_type;";
@@ -385,29 +338,25 @@ int HistoricDB::getEmployeeProductOptions(const QString& employee_id, XmlConfig*
         return 0;
     }
 
-    xml->pushDomain();
-    xml->createElementSetDomain("options");
+    xml.pushDomain();
+    xml.createElementSetDomain("options");
 
     int i = 0;
     while (query.next()) {
-        xml->createElement("option[" + QString::number(i) + "].type", query.value(0).toString());
-        xml->createElement("option[" + QString::number(i) + "].name", query.value(1).toString());
-        xml->createElement("option[" + QString::number(i) + "].count", query.value(2).toString());
-        xml->createElement("option[" + QString::number(i) + "].amount", query.value(3).toString());
+        xml.createElement("option[" + QString::number(i) + "].type", query.value(0).toString());
+        xml.createElement("option[" + QString::number(i) + "].name", query.value(1).toString());
+        xml.createElement("option[" + QString::number(i) + "].count", query.value(2).toString());
+        xml.createElement("option[" + QString::number(i) + "].amount", query.value(3).toString());
         i++;
     }
 
-    xml->releaseDomain("options");
-    xml->popDomain();
+    xml.releaseDomain("options");
+    xml.popDomain();
     return 1;
 }
 
 int HistoricDB::getEmployeeEvent(const QString& employee_id, const QString& event_type)
 {
-
-    int ret = 0;
-    if (!isConnected())
-        return 0;
     QString sql = "SELECT num_events FROM z_employee_events ";
     sql += "WHERE (employee_id='" + employee_id + "') AND (event_type='" + event_type + "');";
 
@@ -418,20 +367,16 @@ int HistoricDB::getEmployeeEvent(const QString& employee_id, const QString& even
     }
 
     query.first();
-    return ret = query.value(0).toInt();
+    return query.value(0).toInt();
 }
 
-bool HistoricDB::getXMain(XmlConfig* xml)
+bool HistoricDB::getXMain(XmlConfig &xml)
 {
-
-    if (!xml)
-        return false;
-
-    xml->pushDomain();
-    xml->delDomain();
+    xml.pushDomain();
+    xml.delDomain();
 
     if (!isConnected()) {
-        xml->popDomain();
+        xml.popDomain();
         return false;
     }
 
@@ -439,39 +384,37 @@ bool HistoricDB::getXMain(XmlConfig* xml)
 
     QSqlQuery query(sql, dbHandle());
     if (!query.isActive() || !query.size()) {
-        cout << "Problems at" << __PRETTY_FUNCTION__ << ":" << __LINE__ << endl;
-        xml->popDomain();
+        cout << "Problems at " << __PRETTY_FUNCTION__ << ":" << __LINE__ << endl;
+        xml.popDomain();
         return false;
     }
 
     int i = 0;
     double total = 0;
     while (query.next()) {
-        xml->createElementSetDomain("main.paytype[" + QString::number(i) + "]");
-        xml->createElement("name", query.value(0).toString());
-        xml->createElement("num_tickets", query.value(1).toString());
+        xml.createElementSetDomain("main.paytype[" + QString::number(i) + "]");
+        xml.createElement("name", query.value(0).toString());
+        xml.createElement("num_tickets", query.value(1).toString());
         auto aux_double = query.value(2).toDouble();
-        xml->createElement("total_income", QString::number(aux_double, 'f', 2));
+        xml.createElement("total_income", QString::number(aux_double, 'f', 2));
         total += aux_double;
-        xml->delDomain();
+        xml.delDomain();
         i++;
     }
 
-    xml->createElement("main.total", QString::number(total, 'f', 2));
-    xml->popDomain();
+    xml.createElement("main.total", QString::number(total, 'f', 2));
+    xml.popDomain();
     return true;
 }
 
-bool HistoricDB::getXOfferSection(XmlConfig* xml)
+bool HistoricDB::getXOfferSection(XmlConfig &xml)
 {
-    if (!xml)
-        return false;
 
-    xml->pushDomain();
-    xml->delDomain();
+    xml.pushDomain();
+    xml.delDomain();
 
     if (!isConnected()) {
-        xml->popDomain();
+        xml.popDomain();
         return false;
     }
 
@@ -479,69 +422,58 @@ bool HistoricDB::getXOfferSection(XmlConfig* xml)
     QSqlQuery query(sql, dbHandle());
 
     if (!query.isActive()) {
-        xml->popDomain();
+        xml.popDomain();
         return false;
     }
 
     if (!query.size()) {
-        xml->createElement("offers");
+        xml.createElement("offers");
         return true;
     }
 
     int i = 0;
-    xml->createElementSetDomain("offers");
+    xml.createElementSetDomain("offers");
     while (query.next()) {
-        xml->createElement("offer[" + QString::number(i) + "].type", query.value(0).toString());
-        xml->createElement("offer[" + QString::number(i) + "].name", query.value(1).toString());
-        xml->createElement("offer[" + QString::number(i) + "].count", query.value(2).toString());
+        xml.createElement("offer[" + QString::number(i) + "].type", query.value(0).toString());
+        xml.createElement("offer[" + QString::number(i) + "].name", query.value(1).toString());
+        xml.createElement("offer[" + QString::number(i) + "].count", query.value(2).toString());
         i++;
     }
-    xml->delDomain();
-    xml->popDomain();
+    xml.delDomain();
+    xml.popDomain();
     return true;
 }
 
-bool HistoricDB::getXOptionSection(XmlConfig* xml)
+bool HistoricDB::getXOptionSection(XmlConfig &xml)
 {
-
-    bool ret = false;
-
-    if (!xml)
-        return false;
-
-    xml->pushDomain();
-    xml->delDomain();
-
-    if (!isConnected()) {
-        xml->popDomain();
-        return false;
-    }
+    xml.pushDomain();
+    xml.delDomain();
 
     QString sql = "SELECT option_type, prod_option, num_products, total FROM z_options order by option_type; ";
     QSqlQuery query(sql, dbHandle());
     if (!query.isActive()) {
         cout << "problems at" << __PRETTY_FUNCTION__ << ":" << __LINE__ << endl;
-        xml->popDomain();
+        xml.popDomain();
 
         return false;
     }
 
     if (!query.size()) {
         cout << "problems at" << __PRETTY_FUNCTION__ << ":" << __LINE__ << endl;
-        xml->createElement("options");
+        xml.createElement("options");
         return true;
     }
 
     int i = 0;
-    xml->createElementSetDomain("options");
+    xml.createElementSetDomain("options");
     while (query.next()) {
-        xml->createElement("option[" + QString::number(i) + "].type", query.value(0).toString());
-        xml->createElement("option[" + QString::number(i) + "].name", query.value(1).toString());
-        xml->createElement("option[" + QString::number(i) + "].count", query.value(2).toString());
-        xml->createElement("option[" + QString::number(i) + "].amount", query.value(3).toString());
+        xml.createElement("option[" + QString::number(i) + "].type", query.value(0).toString());
+        xml.createElement("option[" + QString::number(i) + "].name", query.value(1).toString());
+        xml.createElement("option[" + QString::number(i) + "].count", query.value(2).toString());
+        xml.createElement("option[" + QString::number(i) + "].amount", query.value(3).toString());
         i++;
     }
-    xml->delDomain();
-    xml->popDomain();
+    xml.delDomain();
+    xml.popDomain();
     return true;
 }

@@ -1,14 +1,9 @@
-/***************************************************************************
-                          nprofitreportwidget.h  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  nprofitreportwidget.cpp
+// birth     :  6/2/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #ifndef NPROFITREPORTWIDGET_H
 #define NPROFITREPORTWIDGET_H
@@ -31,14 +26,17 @@ class NProfitReportWidget : public QWidget,
 
 public:
     const QString DBusObjectPath { "/wpos/wposbo/ProfitReport" };
-    explicit NProfitReportWidget(UserModule* user_module, QWidget* parent = 0, const QString& name = QString {});
+    explicit NProfitReportWidget(
+        UserModule* user_module,
+        QWidget* parent = 0,
+        const QString& name = QString {});
     ~NProfitReportWidget();
 
 signals:
     void reportCreated(const QString& name);
 
 public slots:
-    Q_SCRIPTABLE void reportSlot(QString) override; // ASYNC
+    Q_SCRIPTABLE virtual void reportSlot(QString) override; // ASYNC
 
 protected slots: //@benes
     void clear();
@@ -61,13 +59,21 @@ protected:
     void init();
     virtual void showEvent(QShowEvent* e) override;
     virtual void hideEvent(QHideEvent* e) override;
-    virtual bool doIsClosing();
-    virtual void doSelectReport(QString& start_date, QString& end_date, const QString& informe = QString {});
-    virtual void doSetOutputStream(QDataStream& out_stream, const QString& informe, const QString& start_date, const QString& end_date, const QString& employee_id);
+    virtual bool doIsClosing() const;
+    virtual void doSelectReport(
+        QString& start_date,
+        QString& end_date,
+        const QString& informe = QString {});
+    virtual void doSetOutputStream(
+        QDataStream& out_stream,
+        const QString& informe,
+        const QString& start_date,
+        const QString& end_date,
+        const QString& employee_id);
     void getUsers();
     void startShowing();
 
-    QString getActualReport();
+    QString getActualReport() const;
     bool checkAllValues();
     bool checkReportModule();
     bool checkStickModule();

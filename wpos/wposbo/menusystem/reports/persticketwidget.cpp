@@ -1,14 +1,9 @@
-/***************************************************************************
-                          persticketwidget.cpp  -  description
-                             -------------------
-    begin                : mar may 11 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  persticketwidget.cpp
+// birth     :  5/11/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "persticketwidget.h"
 #include <libbslxml/xmlconfig.h>
@@ -136,22 +131,11 @@ void PersTicketWidget::layoutItems()
     splitter->setChildrenCollapsible(false);
     main_page_hlayout->addWidget(splitter);
 
-    auto tickets_frame_main_hlayout = new QHBoxLayout(main_page);
-    tickets_frame_main_hlayout->addItem(tickets_frame_vlayout);
-
     splitter->addWidget(order_frame);
     splitter->addWidget(tickets_frame);
 
-    QVBoxLayout* order_layout = new QVBoxLayout(order_frame);
-    order_layout->addWidget(order_view);
-    order_main_layout->addLayout(order_layout);
+    order_main_layout->addWidget(order_view);
     order_main_layout->addLayout(nav_button_hlayout);
-}
-
-PersTicketWidget::~PersTicketWidget()
-{
-    ticketnum_listview->clear();
-    database.disConnect();
 }
 
 void PersTicketWidget::clear()
@@ -173,7 +157,6 @@ void PersTicketWidget::tableClickedSlot()
 
 void PersTicketWidget::getPersTickets()
 {
-
     QDateTime init_date = init_datepicker->dateTime();
     QDateTime finish_date = end_datepicker->dateTime();
 
@@ -184,7 +167,6 @@ void PersTicketWidget::getPersTickets()
     }
 
     ticketnum_listview->clear();
-    // QVector<TicketResumeData> resumes = database.getTicketResume(init_date.toString("MM/dd/yyyy") + " 00:00:00", finish_date.toString("MM/dd/yyyy") + " 23:59:59");
     QVector<TicketResumeData> resumes = database.getTicketResume(init_date.toString(), finish_date.toString());
 
     if (resumes.isEmpty())

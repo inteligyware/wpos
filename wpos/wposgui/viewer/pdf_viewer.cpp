@@ -35,8 +35,8 @@ PdfViewer::PdfViewer(QWidget *parent)
     m_pageSelector->setDocument(m_document);
     auto page_navigator = ui->pdfView->pageNavigator();
     connect(page_navigator, &QPdfPageNavigator::currentPageChanged, m_pageSelector, &QPdfPageSelector::setCurrentPage);
-    // connect(page_navigator, &QPdfPageNavigator::backAvailableChanged, ui->actionBack, &QAction::setEnabled);
-    // connect(page_navigator, &QPdfPageNavigator::forwardAvailableChanged, ui->actionForward, &QAction::setEnabled);
+    connect(page_navigator, &QPdfPageNavigator::backAvailableChanged, ui->actionPreviousPage, &QAction::setEnabled);
+    connect(page_navigator, &QPdfPageNavigator::forwardAvailableChanged, ui->actionNextPage, &QAction::setEnabled);
 
     connect(m_zoomSelector, &ZoomSelector::zoomModeChanged, ui->pdfView, &QPdfView::setZoomMode);
     connect(m_zoomSelector, &ZoomSelector::zoomFactorChanged, ui->pdfView, &QPdfView::setZoomFactor);

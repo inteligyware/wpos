@@ -54,7 +54,7 @@ protected slots:
     void handleFileChanged(const QString&);
 
 protected:
-    XmlConfig* loadDatabaseConfig();
+    XmlConfig loadDatabaseConfig();
 
 protected:
     QFileSystemWatcher* file_watcher;

@@ -48,17 +48,17 @@ struct IngredientData {
 
 class ProductsModuleDB : public BasicDatabase {
 public:
-    ProductsModuleDB(QString _name_connection,
-        QString _path_connection,
-        QString _database,
-        QString _username,
-        QString _passwd);
+    ProductsModuleDB(QString con_name,
+        QString con_param,
+        QString db,
+        QString user,
+        QString pwd);
 
-    ProductsModuleDB(const QString& _connection_name,
+    ProductsModuleDB(const QString& con_name,
         XmlConfig* xml);
 
-    ProductsModuleDB(const QString& _connection_name,
-        const QString& configuration_path);
+    ProductsModuleDB(const QString& con_name,
+        const QString& con_param);
 
     virtual ~ProductsModuleDB() = default;
 
@@ -66,31 +66,31 @@ public:
 
     bool deleteProduct(const QString& product_code);
 
-    ProductData* getProduct(const QString& product_code);
+    ProductData getProduct(const QString& product_code);
 
     QString getProductLike(const QString& product_name);
 
-    QStringList* getFamilies();
+    QStringList getFamilies();
 
-    ProductData* getLogo(const QString& product_name);
+    ProductData getLogo(const QString& product_name);
 
-    QPtrList<ProductData>* getLogos(QStringList products_name);
+    QVector<ProductData> getLogos(const QStringList& product_names);
 
-    QStringList* getTaxes();
+    QStringList getTaxes();
 
-    QPtrList<ProductData>* getProducts();
+    QVector<ProductData> getProducts();
 
-    QPtrList<ProductData>* getProductsExtend();
+    QVector<ProductData> getProductsExtend();
 
-    QPtrList<ProductData>* getUnitaryProducts();
+    QVector<ProductData> getUnitaryProducts();
 
     bool isUnitaryProduct(const QString& product_code);
 
-    bool insertProduct(ProductData* product);
+    bool insertProduct(const ProductData& product);
 
-    bool updateProduct(ProductData* product);
+    bool updateProduct(const ProductData& product);
 
-    QPtrList<ProductData>* getCompositions();
+    QVector<ProductData> getCompositions();
 
     bool insertProductComposition(const QString& composition_code,
         const QString& ingredient_code,
@@ -103,9 +103,9 @@ public:
     bool existProductComposition(const QString& compositon_code,
         const QString& ingredient_code);
 
-    QPtrList<IngredientData>* getIngredients(const QString& composition_code);
+    QVector<IngredientData> getIngredients(const QString& composition_code);
 
-    QPtrList<ProductData>* getCompositionsWithIngredient(const QString& ingredient_code);
+    QVector<ProductData> getCompositionsWithIngredient(const QString& ingredient_code);
 
     QString getProductCodeByProductName(const QString& product_name);
 

@@ -34,20 +34,20 @@ struct ZResumeData {
 
 class HistoricDB : public BasicDatabase {
 public:
-    HistoricDB(const QString& connection_name,
-        const QString& hostname,
-        const QString& database,
-        const QString& username,
-        const QString& passwd);
+    HistoricDB(const QString& con_name,
+        const QString& host,
+        const QString& db,
+        const QString& user,
+        const QString& pwd);
 
-    HistoricDB(const QString& _connection_name,
-        const QString& configuration_path);
+    HistoricDB(const QString& con_name,
+        const QString& conf_path);
 
     /**
      *       get a list with a resume of all tickets
      */
-    QVector<TicketResumeData> getTicketResume(QString start_date, QString end_date);
-    QList<ZResumeData*>* getZResume(QString start_date, QString end_date);
+    QVector<TicketResumeData> getTicketResume(const QString& start_date, const QString& end_date);
+    QVector<ZResumeData> getZResume(QString start_date, QString end_date);
 
     /**
      * get a ticket from the DataBase. This method return a Xml with the composition
@@ -56,13 +56,13 @@ public:
      */
     XmlConfig getTicketFromDatabase(int ticket_number);
 
-    bool getXEmployeeData(XmlConfig* xml);
-    bool getXMain(XmlConfig* xml);
-    bool getXOfferSection(XmlConfig* xml);
-    bool getXOptionSection(XmlConfig* xml);
+    bool getXEmployeeData(XmlConfig &xml);
+    bool getXMain(XmlConfig& xml);
+    bool getXOfferSection(XmlConfig& xml);
+    bool getXOptionSection(XmlConfig& xml);
 
-    int getEmployeeProductInvitations(const QString& employee_id, XmlConfig* xml);
-    int getEmployeeProductOptions(const QString& employee_id, XmlConfig* xml);
+    int getEmployeeProductInvitations(const QString& employee_id, XmlConfig& xml);
+    int getEmployeeProductOptions(const QString& employee_id, XmlConfig& xml);
     int getEmployeeEvent(const QString& employee_id, const QString& event_type);
 
     double getMoneyInCash();

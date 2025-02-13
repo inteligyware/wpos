@@ -1,14 +1,9 @@
-/***************************************************************************
-                          perszwidget.cpp  -  description
-                             -------------------
-    begin                : mar may 11 2004
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  perszwidget.h
+// birth     :  5/11/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "perszwidget.h"
 
@@ -60,12 +55,15 @@ PersZWidget::PersZWidget(QWidget* parent, const QString& name)
 {
     setupUi(this);
     setObjectName(name);
-
+    database.connect();
     timer = new QTimer(this);
     setupButtons();
     setupSections();
     connectSignals();
-    //    initBrowser();
+    end_datetime_dtedit->setMaximumDate(QDate::currentDate());
+    end_datetime_dtedit->setDateTime(QDateTime::currentDateTime());
+    getZ(start_datetime_dtedit->dateTime(), end_datetime_dtedit->dateTime());
+
 }
 
 void PersZWidget::setupButtons()
@@ -106,8 +104,8 @@ void PersZWidget::connectSignals()
 
     connect(z_treeview, &QTreeWidget::itemSelectionChanged, this, &PersZWidget::zSelectedSlot);
 
-    connect(start_datetime_dtedit, &QDateTimeEdit::dateTimeChanged, this, &PersZWidget::tableClickedSlot);
     connect(start_datetime_dtedit, &QDateTimeEdit::dateTimeChanged, this, &PersZWidget::setEndDateRange);
+    connect(start_datetime_dtedit, &QDateTimeEdit::dateTimeChanged, this, &PersZWidget::tableClickedSlot);
     connect(end_datetime_dtedit, &QDateTimeEdit::dateTimeChanged, this, &PersZWidget::tableClickedSlot);
 
     connect(print_button, &QPushButton::clicked, this, &PersZWidget::printSlot);
@@ -120,15 +118,12 @@ void PersZWidget::connectSignals()
 void PersZWidget::showEvent(QShowEvent* e)
 {
     stack->setCurrentWidget(main_page);
-    // clear();
-    // getZ();
     QWidget::showEvent(e);
 }
 
 void PersZWidget::hideEvent(QHideEvent* e)
 {
     stack->setCurrentWidget(main_page);
-    clear();
     QWidget::hideEvent(e);
 }
 
@@ -204,27 +199,20 @@ void PersZWidget::getZ(const QDateTime& start, const QDateTime& end)
     bool aux_bool = false;
 
     z_treeview->clear();
-    database.connect();
-    QList<ZResumeData*>* resumes = database.getZResume(start.toString(), end.toString());
-    database.disConnect();
+    QVector<ZResumeData> resumes = database.getZResume(start.toString(), end.toString());
 
-    if (!resumes)
-        return;
-
-    for (const auto* data : *resumes) {
+    for (const ZResumeData& data : resumes) {
         auto item = new QTreeWidgetItem(z_treeview);
         item->setIcon(Icon, QPixmap("controls:view_text.png"));
-        item->setText(StartDate, data->start_date);
-        item->setText(EndDate, data->end_date);
-        (aux = data->cash.toDouble(&aux_bool));
+        item->setText(StartDate, data.start_date);
+        item->setText(EndDate, data.end_date);
+        (aux = data.cash.toDouble(&aux_bool));
         if (aux_bool)
-            //            item->setText(Amount, QString::number(aux,'f',2)+" "+tr(" Euros")); //@benes
+            // item->setText(Amount, QString::number(aux,'f',2)+" "+tr(" Euros")); //@benes
             item->setText(Amount, QString::number(aux, 'f', 2) + " " + tr(" XAF")); //@benes
-        item->setText(EventCode, data->event_code);
+        item->setText(EventCode, data.event_code);
     }
 
-    resumes->clear();
-    delete resumes;
     ok_button->setEnabled(checkAllValues());
 }
 
@@ -262,8 +250,8 @@ void PersZWidget::acceptSlot()
     stack->setCurrentWidget(viewer_page);
     XmlConfig xml;
     getCurrentZ(xml);
-    if (xml.wellFormed())
-        showHtml(xmlToHtml(&xml));
+    // if (xml.wellFormed())
+        showHtml(xmlToHtml(xml));
 }
 
 void PersZWidget::exitSlot()
@@ -349,44 +337,41 @@ void PersZWidget::getCurrentZ(XmlConfig& xml)
     QTreeWidgetItem* item = z_treeview->currentItem();
     xml.createElement("timestamps.first", item->text(StartDate));
     xml.createElement("timestamps.last", item->text(EndDate));
-    database.connect();
 
     auto noError = true;
     noError = database.createTempZ(item->text(EventCode));
+    if (!noError)
+        cout << "Problems creating createTempZ" << endl;
 
-    noError &= database.getXEmployeeData(&xml);
+    noError &= database.getXEmployeeData(xml);
     if (!noError)
         cout << "Problems obtaining  staff data" << endl;
 
-    noError &= database.getXMain(&xml);
+    noError &= database.getXMain(xml);
     if (!noError)
         cout << "Problems obtaining main data" << endl;
 
-    noError &= database.getXOfferSection(&xml);
+    noError &= database.getXOfferSection(xml);
     if (!noError)
         cout << "Problems obtaining offer data " << endl;
 
-    noError &= database.getXOptionSection(&xml);
+    noError &= database.getXOptionSection(xml);
     if (!noError)
         cout << "Problems obtaining option data " << endl;
 
     if (!noError) {
-        clear();
+        // clear(); @benes
         stack->setCurrentWidget(main_page);
     } else {
         auto cash = QString::number(database.getMoneyInCash(), 'f', 2);
         xml.createElement("money_at_cashbox", cash);
     }
-    database.disConnect();
 }
 
-QString PersZWidget::xmlToHtml(XmlConfig* xml)
+QString PersZWidget::xmlToHtml(XmlConfig& xml)
 {
-    if (!xml)
-        QString {};
-
-    xml->pushDomain();
-    xml->delDomain();
+    xml.pushDomain();
+    xml.delDomain();
 
     QString html_page = "<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=ISO-8859-1\">";
     html_page += "<meta http-equiv=\"CACHE-CONTROL\" content=\"no-cache\">";
@@ -401,7 +386,7 @@ QString PersZWidget::xmlToHtml(XmlConfig* xml)
     html_page += optionSection(xml) + "<br>";
     html_page += "</body></html>";
 
-    xml->popDomain();
+    xml.popDomain();
     return html_page;
 }
 
@@ -461,12 +446,11 @@ bool PersZWidget::initBrowser()
     return true;
 }
 
-QString PersZWidget::mainSection(XmlConfig* xml)
+QString PersZWidget::mainSection(XmlConfig &xml)
 {
     int i, count;
     QString head = "";
     QString sub_head = "";
-    QString foot_head = "";
     QString ret = "";
     QString montante, aux;
     double met_tot = 0.0;
@@ -495,33 +479,33 @@ QString PersZWidget::mainSection(XmlConfig* xml)
     sub_head += "<tr><td width=\"40\"></td><td>" + tr("Total") + ": <b>#TOTAL# &#8364;</b></td>";
     sub_head += "</tr></tbody></table><br>";
 
-    xml->pushDomain();
-    xml->delDomain();
-    montante = xml->readString("money_at_cashbox");
-    xml->setDomain("main");
+    xml.pushDomain();
+    xml.delDomain();
+    montante = xml.readString("money_at_cashbox");
+    xml.setDomain("main");
     ret += head;
-    count = xml->howManyTags("paytype");
+    count = xml.howManyTags("paytype");
     for (i = 0; i < count; i++) {
         ret += sub_head;
-        if (xml->readString("paytype[" + QString::number(i) + "].name") == "metalico")
-            met_tot = (xml->readString("paytype[" + QString::number(i) + "].total_income")).toDouble();
-        ret.replace("#PAYTYPE#", xml->readString("paytype[" + QString::number(i) + "].name"));
-        ret.replace("#NUMTICKETS#", xml->readString("paytype[" + QString::number(i) + "].num_tickets"));
-        ret.replace("#TOTAL#", xml->readString("paytype[" + QString::number(i) + "].total_income"));
+        if (xml.readString("paytype[" + QString::number(i) + "].name") == "metalico")
+            met_tot = (xml.readString("paytype[" + QString::number(i) + "].total_income")).toDouble();
+        ret.replace("#PAYTYPE#", xml.readString("paytype[" + QString::number(i) + "].name"));
+        ret.replace("#NUMTICKETS#", xml.readString("paytype[" + QString::number(i) + "].num_tickets"));
+        ret.replace("#TOTAL#", xml.readString("paytype[" + QString::number(i) + "].total_income"));
     }
 
-    ret.replace("#MAINTOTAL#", xml->readString("total"));
+    ret.replace("#MAINTOTAL#", xml.readString("total"));
     ret.replace("#MONTANTE#", montante);
     aux = QString::number((montante.toDouble() - met_tot), 'f', 2);
     ret.replace("#CAMBIO#", aux);
 
     ret += "<br>";
 
-    xml->popDomain();
+    xml.popDomain();
     return ret;
 }
 
-QString PersZWidget::productSection(XmlConfig* xml)
+QString PersZWidget::productSection(XmlConfig &xml)
 {
     int count, i;
     QString head;
@@ -541,32 +525,31 @@ QString PersZWidget::productSection(XmlConfig* xml)
     product += "<tr><td width=\"40\"></td><td>" + tr("Total") + ": #TOTAL# &#8364;</td></tr>";
     product += "</tbody></table><br>";
 
-    xml->pushDomain();
-    xml->delDomain();
+    xml.pushDomain();
+    xml.delDomain();
 
-    xml->setDomain("products");
-    count = xml->howManyTags("product");
+    xml.setDomain("products");
+    count = xml.howManyTags("product");
     if (count >= 1)
         ret += head;
     for (i = 0; i < count; i++) {
         ret += product;
-        ret.replace("#PRODUCT#", xml->readString("product[" + QString::number(i) + "].name"));
-        ret.replace("#UNITS#", xml->readString("product[" + QString::number(i) + "].units"));
-        ret.replace("#TOTAL#", xml->readString("product[" + QString::number(i) + "].total_income"));
+        ret.replace("#PRODUCT#", xml.readString("product[" + QString::number(i) + "].name"));
+        ret.replace("#UNITS#", xml.readString("product[" + QString::number(i) + "].units"));
+        ret.replace("#TOTAL#", xml.readString("product[" + QString::number(i) + "].total_income"));
     }
-    xml->popDomain();
+    xml.popDomain();
 
     ret += "<br>";
 
     return ret;
 }
 
-QString PersZWidget::waitersSection(XmlConfig* xml)
+QString PersZWidget::waitersSection(XmlConfig& xml)
 {
     int count, i, offer_count, option_count, j, partial;
     QString head;
     QString employee;
-    QString employee_end;
     QString option_section;
     QString offer;
     QString option;
@@ -604,58 +587,58 @@ QString PersZWidget::waitersSection(XmlConfig* xml)
     option += "<tr><td width=\"60\"></td><td>#OPTIONTYPE#  [<b>#OPTIONNAME#</b>] : #OPTIONAMOUNT# &#8364;</td></tr>";
     option += "</tbody></table>";
 
-    xml->pushDomain();
-    xml->delDomain();
-    xml->setDomain("employees");
+    xml.pushDomain();
+    xml.delDomain();
+    xml.setDomain("employees");
 
     ret += head;
 
-    count = xml->howManyTags("employee");
+    count = xml.howManyTags("employee");
     for (i = 0; i < count; i++) {
-        xml->setDomain("employee[" + QString::number(i) + "]");
+        xml.setDomain("employee[" + QString::number(i) + "]");
         partial = 0;
         ret += employee;
-        ret.replace("#NAME#", xml->readString("name"));
-        ret.replace("#ID#", xml->readString("id"));
-        ret.replace("#NUMTICKETS#", xml->readString("num_tickets"));
-        ret.replace("#TOTAL#", xml->readString("total_income"));
-        ret.replace("#OPEN_CASHBOX#", xml->readString("event_count"));
-        if (xml->setDomain("offers")) {
-            offer_count = xml->howManyTags("offer");
+        ret.replace("#NAME#", xml.readString("name"));
+        ret.replace("#ID#", xml.readString("id"));
+        ret.replace("#NUMTICKETS#", xml.readString("num_tickets"));
+        ret.replace("#TOTAL#", xml.readString("total_income"));
+        ret.replace("#OPEN_CASHBOX#", xml.readString("event_count"));
+        if (xml.setDomain("offers")) {
+            offer_count = xml.howManyTags("offer");
             for (j = 0; j < offer_count; j++) {
-                xml->setDomain("offer[" + QString::number(j) + "]");
+                xml.setDomain("offer[" + QString::number(j) + "]");
                 ret += offer;
-                ret.replace("#OFFERTYPE#", xml->readString("type"));
-                ret.replace("#OFFERNAME#", xml->readString("name"));
-                ret.replace("#OFFERCOUNT#", xml->readString("count"));
-                partial += (xml->readString("count")).toInt();
-                xml->releaseDomain("offer");
+                ret.replace("#OFFERTYPE#", xml.readString("type"));
+                ret.replace("#OFFERNAME#", xml.readString("name"));
+                ret.replace("#OFFERCOUNT#", xml.readString("count"));
+                partial += (xml.readString("count")).toInt();
+                xml.releaseDomain("offer");
             }
-            xml->releaseDomain("offers");
+            xml.releaseDomain("offers");
         }
         ret += option_section;
-        if (xml->setDomain("options")) {
-            option_count = xml->howManyTags("option");
+        if (xml.setDomain("options")) {
+            option_count = xml.howManyTags("option");
             for (j = 0; j < option_count; j++) {
-                xml->setDomain("option[" + QString::number(j) + "]");
+                xml.setDomain("option[" + QString::number(j) + "]");
                 ret += option;
-                ret.replace("#OPTIONTYPE#", xml->readString("type"));
-                ret.replace("#OPTIONNAME#", xml->readString("name"));
-                //                                ret.replace("#OPTIONCOUNT#",xml->readString("count"));
-                ret.replace("#OPTIONAMOUNT#", xml->readString("amount"));
-                xml->releaseDomain("option");
+                ret.replace("#OPTIONTYPE#", xml.readString("type"));
+                ret.replace("#OPTIONNAME#", xml.readString("name"));
+                //                                ret.replace("#OPTIONCOUNT#",xml.readString("count"));
+                ret.replace("#OPTIONAMOUNT#", xml.readString("amount"));
+                xml.releaseDomain("option");
             }
-            xml->releaseDomain("options");
+            xml.releaseDomain("options");
         }
         ret.replace("#TOTALOFFERS#", QString::number(partial));
-        xml->releaseDomain("employee");
+        xml.releaseDomain("employee");
         ret += "<br>";
     }
-    xml->popDomain();
+    xml.popDomain();
     return ret;
 }
 
-QString PersZWidget::offerSection(XmlConfig* xml)
+QString PersZWidget::offerSection(XmlConfig& xml)
 {
     int count, i;
     int partial = 0;
@@ -665,15 +648,12 @@ QString PersZWidget::offerSection(XmlConfig* xml)
     QString offer;
     QString ret;
 
-    if (!xml)
-        return ret;
+    xml.pushDomain();
+    xml.delDomain();
 
-    xml->pushDomain();
-    xml->delDomain();
-
-    if (!xml->setDomain("offers"))
+    if (!xml.setDomain("offers"))
         return ret;
-    count = xml->howManyTags("offer");
+    count = xml.howManyTags("offer");
 
     if (count)
         createOffersGraph(xml);
@@ -697,13 +677,13 @@ QString PersZWidget::offerSection(XmlConfig* xml)
         ret += offer_head;
     }
     for (i = 0; i < count; i++) {
-        xml->setDomain("offer[" + QString::number(i) + "]");
+        xml.setDomain("offer[" + QString::number(i) + "]");
         ret += offer;
-        ret.replace("#OFFERTYPE#", xml->readString("type"));
-        ret.replace("#OFFERNAME#", xml->readString("name"));
-        ret.replace("#OFFERCOUNT#", xml->readString("count"));
-        partial += (xml->readString("count")).toInt();
-        xml->releaseDomain("offer");
+        ret.replace("#OFFERTYPE#", xml.readString("type"));
+        ret.replace("#OFFERNAME#", xml.readString("name"));
+        ret.replace("#OFFERCOUNT#", xml.readString("count"));
+        partial += (xml.readString("count")).toInt();
+        xml.releaseDomain("offer");
     }
     if (count) {
         ret.replace("#TOTALOFFERS#", QString::number(partial));
@@ -712,11 +692,11 @@ QString PersZWidget::offerSection(XmlConfig* xml)
     }
 
     ret += "<br><br>";
-    xml->popDomain();
+    xml.popDomain();
     return ret;
 }
 
-QString PersZWidget::optionSection(XmlConfig* xml)
+QString PersZWidget::optionSection(XmlConfig& xml)
 {
     int count, i;
     QString head = "";
@@ -725,15 +705,12 @@ QString PersZWidget::optionSection(XmlConfig* xml)
     QString offer = "";
     QString ret = "";
 
-    if (!xml)
-        return ret;
+    xml.pushDomain();
+    xml.delDomain();
 
-    xml->pushDomain();
-    xml->delDomain();
-
-    if (!xml->setDomain("options"))
+    if (!xml.setDomain("options"))
         return ret;
-    count = xml->howManyTags("option");
+    count = xml.howManyTags("option");
 
     if (count)
         createOptionsGraph(xml);
@@ -754,26 +731,24 @@ QString PersZWidget::optionSection(XmlConfig* xml)
         ret += offer_head;
     }
     for (i = 0; i < count; i++) {
-        xml->setDomain("option[" + QString::number(i) + "]");
+        xml.setDomain("option[" + QString::number(i) + "]");
         ret += offer;
-        ret.replace("#OPTION_TYPE#", xml->readString("type"));
-        ret.replace("#OPTION_NAME#", xml->readString("name"));
-        //                ret.replace("#OPTION_COUNT#",xml->readString("count"));
-        ret.replace("#OPTION_AMOUNT#", xml->readString("amount"));
-        xml->releaseDomain("option");
+        ret.replace("#OPTION_TYPE#", xml.readString("type"));
+        ret.replace("#OPTION_NAME#", xml.readString("name"));
+        //                ret.replace("#OPTION_COUNT#",xml.readString("count"));
+        ret.replace("#OPTION_AMOUNT#", xml.readString("amount"));
+        xml.releaseDomain("option");
     }
     if (count) {
         ret += "<IMG src=\"" + options_graph + "\" hspace=\"12\"border=\"0\" align=\"right\">";
         ret += "<br><br>";
     }
-    xml->popDomain();
+    xml.popDomain();
     return ret;
 }
 
-bool PersZWidget::createMainGraph(XmlConfig* xml, int width, int height)
+bool PersZWidget::createMainGraph(XmlConfig &xml, int width, int height)
 {
-    FILE* fp = 0;
-    QFile* f = 0;
     QString aux;
     float aux_float;
     float* values = 0;
@@ -788,25 +763,20 @@ bool PersZWidget::createMainGraph(XmlConfig* xml, int width, int height)
     GDC_stack_type = GDC_STACK_BESIDE;
 #endif
 
-    f = new QFile(main_graph);
-    if (f->exists())
-        f->remove();
-    delete f;
+    QFile f(main_graph);
+    if (f.exists()) f.remove();
 
     // main_graph = "tmps:wpos_x_main_graph" + QString::number(rand() % 65536) + ".png";
     main_graph = "wpos_x_main_graph" + QString::number(rand() % 65536) + ".png";
 
-    fp = fopen(main_graph.toLatin1(), "wb");
+    FILE*  fp = fopen(main_graph.toLatin1(), "wb");
     if (!fp)
         return false;
 
-    if (!xml)
-        return false;
-
-    xml->pushDomain();
-    xml->delDomain();
-    xml->setDomain("main");
-    count = xml->howManyTags("paytype");
+    xml.pushDomain();
+    xml.delDomain();
+    xml.setDomain("main");
+    count = xml.howManyTags("paytype");
 
     values = (float*)malloc(count * sizeof(float));
     t = (char**)malloc(count * sizeof(char*));
@@ -816,10 +786,10 @@ bool PersZWidget::createMainGraph(XmlConfig* xml, int width, int height)
 #endif
 
     for (i = 0; i < count; i++) {
-        aux = xml->readString("paytype[" + QString::number(i) + "].total_income");
+        aux = xml.readString("paytype[" + QString::number(i) + "].total_income");
         aux_float = aux.toFloat();
         values[i] = aux_float;
-        aux = xml->readString("paytype[" + QString::number(i) + "].name");
+        aux = xml.readString("paytype[" + QString::number(i) + "].name");
         t[i] = (char*)malloc((aux.length() + 1) * sizeof(char));
 #ifdef _GDC_H
         bzero(t[i], aux.length() + 1);
@@ -837,15 +807,13 @@ bool PersZWidget::createMainGraph(XmlConfig* xml, int width, int height)
     free(values);
 
     fclose(fp);
-    xml->popDomain();
+    xml.popDomain();
 
     return true;
 }
 
-bool PersZWidget::createWaitersGraph(XmlConfig* xml, int width, int height)
+bool PersZWidget::createWaitersGraph(XmlConfig& xml, int width, int height)
 {
-    FILE* fp = 0;
-    QFile* f = 0;
     QString aux;
     float aux_float;
     float* values = 0;
@@ -860,25 +828,21 @@ bool PersZWidget::createWaitersGraph(XmlConfig* xml, int width, int height)
     GDC_stack_type = GDC_STACK_BESIDE;
 #endif
 
-    f = new QFile(waiters_graph);
-    if (f->exists())
-        f->remove();
-    delete f;
+    QFile f (waiters_graph);
+    if (f.exists())
+        f.remove();
 
     // waiters_graph = "tmps:wpos_x_waiters_graph" + QString::number(rand() % 65536) + ".png";
     waiters_graph = "wpos_x_waiters_graph" + QString::number(rand() % 65536) + ".png";
 
-    fp = fopen(waiters_graph.toLatin1(), "wb");
-    if (!fp)
-        return false;
+    FILE* fp = fopen(waiters_graph.toLatin1(), "wb");
+    if (!fp) return false;
 
-    if (!xml)
-        return false;
 
-    xml->pushDomain();
-    xml->delDomain();
-    xml->setDomain("employees");
-    count = xml->howManyTags("employee");
+    xml.pushDomain();
+    xml.delDomain();
+    xml.setDomain("employees");
+    count = xml.howManyTags("employee");
 
     values = (float*)malloc(count * sizeof(float));
     t = (char**)malloc(count * sizeof(char*));
@@ -890,23 +854,23 @@ bool PersZWidget::createWaitersGraph(XmlConfig* xml, int width, int height)
         free(t);
         free(values);
         fclose(fp);
-        xml->delDomain();
-        xml->popDomain();
+        xml.delDomain();
+        xml.popDomain();
         return false;
     }
 
     for (i = 0; i < count; i++) {
-        xml->setDomain("employee[" + QString::number(i) + "]");
-        aux = xml->readString("name");
+        xml.setDomain("employee[" + QString::number(i) + "]");
+        aux = xml.readString("name");
         t[i] = (char*)malloc((aux.length() + 1) * sizeof(char));
 #ifdef _GDC_H
         bzero(t[i], aux.length() + 1);
 #endif
         strncpy(t[i], aux.toLatin1(), aux.length());
-        aux = xml->readString("total_income");
+        aux = xml.readString("total_income");
         aux_float = aux.toFloat();
         values[i] = aux_float;
-        xml->releaseDomain("employee");
+        xml.releaseDomain("employee");
     }
 
 #ifdef _GDC_H
@@ -922,16 +886,14 @@ bool PersZWidget::createWaitersGraph(XmlConfig* xml, int width, int height)
     if (fclose(fp))
         perror("fallo al cerrar descriptor de fichero");
 
-    xml->delDomain();
-    xml->popDomain();
+    xml.delDomain();
+    xml.popDomain();
 
     return true;
 }
 
-bool PersZWidget::createOffersGraph(XmlConfig* xml, int width, int height)
+bool PersZWidget::createOffersGraph(XmlConfig& xml, int width, int height)
 {
-    FILE* fp = 0;
-    QFile* f = 0;
     QString aux;
     float aux_float;
     float* values = 0;
@@ -946,25 +908,21 @@ bool PersZWidget::createOffersGraph(XmlConfig* xml, int width, int height)
     GDC_stack_type = GDC_STACK_BESIDE;
 #endif
 
-    f = new QFile(offers_graph);
-    if (f->exists())
-        f->remove();
-    delete f;
+    QFile f (offers_graph);
+    if (f.exists()) f.remove();
+
 
     // offers_graph = "tmps:wpos_x_offers_graph" + QString::number(rand() % 65536) + ".png";
     offers_graph = "wpos_x_offers_graph" + QString::number(rand() % 65536) + ".png";
 
-    fp = fopen(offers_graph.toLatin1(), "wb");
+    FILE* fp = fopen(offers_graph.toLatin1(), "wb");
     if (!fp)
         return false;
 
-    if (!xml)
-        return false;
-
-    xml->pushDomain();
-    xml->delDomain();
-    xml->setDomain("offers");
-    count = xml->howManyTags("offer");
+    xml.pushDomain();
+    xml.delDomain();
+    xml.setDomain("offers");
+    count = xml.howManyTags("offer");
 
     values = (float*)malloc(count * sizeof(float));
     t = (char**)malloc(count * sizeof(char*));
@@ -977,17 +935,17 @@ bool PersZWidget::createOffersGraph(XmlConfig* xml, int width, int height)
         free(t);
         free(values);
         fclose(fp);
-        xml->delDomain();
-        xml->popDomain();
+        xml.delDomain();
+        xml.popDomain();
         return false;
     }
 
     for (i = 0; i < count; i++) {
-        aux = xml->readString("offer[" + QString::number(i) + "].count");
+        aux = xml.readString("offer[" + QString::number(i) + "].count");
         aux_float = aux.toFloat();
         values[i] = aux_float;
-        aux = xml->readString("offer[" + QString::number(i) + "].type");
-        aux += " " + xml->readString("offer[" + QString::number(i) + "].name");
+        aux = xml.readString("offer[" + QString::number(i) + "].type");
+        aux += " " + xml.readString("offer[" + QString::number(i) + "].name");
         t[i] = (char*)malloc((aux.length() + 1) * sizeof(char));
 #ifdef _GDC_H
         bzero(t[i], aux.length() + 1);
@@ -1005,16 +963,14 @@ bool PersZWidget::createOffersGraph(XmlConfig* xml, int width, int height)
     free(values);
 
     fclose(fp);
-    xml->delDomain();
-    xml->popDomain();
+    xml.delDomain();
+    xml.popDomain();
 
     return true;
 }
 
-bool PersZWidget::createOptionsGraph(XmlConfig* xml, int width, int height)
+bool PersZWidget::createOptionsGraph(XmlConfig& xml, int width, int height)
 {
-    FILE* fp = 0;
-    QFile* f = 0;
     QString aux;
     float aux_float;
     float* values = 0;
@@ -1028,24 +984,21 @@ bool PersZWidget::createOptionsGraph(XmlConfig* xml, int width, int height)
     GDC_stack_type = GDC_STACK_BESIDE;
 #endif
 
-    f = new QFile(options_graph);
-    if (f->exists())
-        f->remove();
-    delete f;
+    QFile f(options_graph);
+    if (f.exists())
+        f.remove();
 
     // options_graph = "tmps:wpos_x_options_graph" + QString::number(rand() % 65536) + ".png";
     options_graph = "wpos_x_options_graph" + QString::number(rand() % 65536) + ".png";
 
-    fp = fopen(options_graph.toLatin1(), "wb");
+    FILE* fp = fopen(options_graph.toLatin1(), "wb");
     if (!fp)
         return false;
-    if (!xml)
-        return false;
 
-    xml->pushDomain();
-    xml->delDomain();
-    xml->setDomain("options");
-    count = xml->howManyTags("option");
+    xml.pushDomain();
+    xml.delDomain();
+    xml.setDomain("options");
+    count = xml.howManyTags("option");
 
     values = (float*)malloc(count * sizeof(float));
     t = (char**)malloc(count * sizeof(char*));
@@ -1058,17 +1011,17 @@ bool PersZWidget::createOptionsGraph(XmlConfig* xml, int width, int height)
         free(t);
         free(values);
         fclose(fp);
-        xml->delDomain();
-        xml->popDomain();
+        xml.delDomain();
+        xml.popDomain();
         return false;
     }
 
     for (i = 0; i < count; i++) {
-        aux = xml->readString("option[" + QString::number(i) + "].amount");
+        aux = xml.readString("option[" + QString::number(i) + "].amount");
         aux_float = aux.toFloat();
         values[i] = aux_float;
-        aux = xml->readString("option[" + QString::number(i) + "].type");
-        aux += " " + xml->readString("option[" + QString::number(i) + "].name");
+        aux = xml.readString("option[" + QString::number(i) + "].type");
+        aux += " " + xml.readString("option[" + QString::number(i) + "].name");
         t[i] = (char*)malloc((aux.length() + 1) * sizeof(char));
 #ifdef _GDC_H
         bzero(t[i], aux.length() + 1);
@@ -1086,8 +1039,8 @@ bool PersZWidget::createOptionsGraph(XmlConfig* xml, int width, int height)
     free(values);
 
     fclose(fp);
-    xml->delDomain();
-    xml->popDomain();
+    xml.delDomain();
+    xml.popDomain();
 
     return true;
 }

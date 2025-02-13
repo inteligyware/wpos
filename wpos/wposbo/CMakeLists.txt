@@ -31,6 +31,7 @@ set(DBUS_ADAPTOR_FILES
     menusystem/offers_options/OptionDeletionWidget.h
     menusystem/offers_options/OptionUpdateWidget.h
     menusystem/reports/NProfitReportWidget.h
+    menusystem/reports/NProdAndOfferReportWidget.h
 #    menusystem/system/FX2000ConfigWidget.h
     menusystem/system/MemStickWidget.h
     productsmodule/offersmodule/ProductOfferModule.h
@@ -118,7 +119,7 @@ set(HEADER_FILES
     menusystem/products/productoffercreationwidget.h
     menusystem/products/productoptioncreationwidget.h
     menusystem/products/productxmfileupdatewidget.h
-    #menusystem/reports/nprodandofferreportwidget.h
+    menusystem/reports/nprodandofferreportwidget.h
     menusystem/reports/nprofitreportwidget.h
     menusystem/reports/persticketwidget.h
     menusystem/reports/perszwidget.h
@@ -194,7 +195,7 @@ set(SOURCES_FILES
     menusystem/reports/perszwidget.cpp
     menusystem/reports/persticketwidget.cpp
     menusystem/reports/nprofitreportwidget.cpp
-    #menusystem/reports/nprodandofferreportwidget.cpp
+    menusystem/reports/nprodandofferreportwidget.cpp
     #menusystem/system/fx2000configwidget.cpp
     menusystem/system/memstickwidget.cpp
     menusystem/system/fx2000enrollwidget.cpp
@@ -300,10 +301,10 @@ install(TARGETS ${MAIN_TARGET}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-# qt_generate_deploy_app_script(
-#    TARGET ${MAIN_TARGET}
-#    OUTPUT_SCRIPT deploy_script
-#    NO_UNSUPPORTED_PLATFORM_ERROR
-# )
+qt_generate_deploy_app_script(
+   TARGET ${MAIN_TARGET}
+   OUTPUT_SCRIPT deploy_script
+   NO_UNSUPPORTED_PLATFORM_ERROR
+)
 
-# install(SCRIPT ${deploy_script})
+install(SCRIPT ${deploy_script})

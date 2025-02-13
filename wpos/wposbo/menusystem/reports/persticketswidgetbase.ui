@@ -255,7 +255,7 @@
                  <bool>true</bool>
                 </property>
                 <property name="columnCount">
-                 <number>4</number>
+                 <number>2</number>
                 </property>
                 <column>
                  <property name="text">
@@ -265,16 +265,6 @@
                 <column>
                  <property name="text">
                   <string notr="true">2</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string notr="true">3</string>
-                 </property>
-                </column>
-                <column>
-                 <property name="text">
-                  <string notr="true">4</string>
                  </property>
                 </column>
                </widget>
@@ -438,7 +428,7 @@
              </layout>
             </item>
             <item>
-             <layout class="QHBoxLayout">
+             <layout class="QHBoxLayout" name="dates_hlayout">
               <item>
                <widget class="QFrame" name="init_date_groupbox">
                 <property name="sizePolicy">
@@ -463,41 +453,111 @@
                  <property name="bottomMargin">
                   <number>4</number>
                  </property>
-                 <item>
-                  <widget class="QDateTimeEdit" name="init_datepicker">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>260</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>260</width>
-                     <height>290</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Select start date</string>
-                   </property>
-                   <property name="displayFormat">
-                    <string>MM/dd/yyyy  hh:mm</string>
-                   </property>
-                   <property name="calendarPopup">
-                    <bool>true</bool>
-                   </property>
-                   <property name="timeSpec">
-                    <enum>Qt::TimeSpec::LocalTime</enum>
-                   </property>
-                  </widget>
-                 </item>
                 </layout>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QDateTimeEdit" name="init_datepicker">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>160</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>260</width>
+                  <height>290</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>Select start date</string>
+                </property>
+                <property name="displayFormat">
+                 <string>MM/dd/yyyy  hh:mm</string>
+                </property>
+                <property name="calendarPopup">
+                 <bool>true</bool>
+                </property>
+                <property name="timeSpec">
+                 <enum>Qt::TimeSpec::LocalTime</enum>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_3">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Policy::Fixed</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QDateTimeEdit" name="end_datepicker">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>160</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>260</width>
+                  <height>290</height>
+                 </size>
+                </property>
+                <property name="dateTime">
+                 <datetime>
+                  <hour>23</hour>
+                  <minute>59</minute>
+                  <second>0</second>
+                  <year>2025</year>
+                  <month>12</month>
+                  <day>31</day>
+                 </datetime>
+                </property>
+                <property name="currentSection">
+                 <enum>QDateTimeEdit::Section::MonthSection</enum>
+                </property>
+                <property name="displayFormat">
+                 <string>MM/dd/yyyy hh:mm</string>
+                </property>
+                <property name="calendarPopup">
+                 <bool>true</bool>
+                </property>
                </widget>
               </item>
               <item>
@@ -540,47 +600,6 @@
                  <property name="bottomMargin">
                   <number>4</number>
                  </property>
-                 <item>
-                  <widget class="QDateTimeEdit" name="end_datepicker">
-                   <property name="sizePolicy">
-                    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                     <horstretch>0</horstretch>
-                     <verstretch>0</verstretch>
-                    </sizepolicy>
-                   </property>
-                   <property name="minimumSize">
-                    <size>
-                     <width>260</width>
-                     <height>0</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>260</width>
-                     <height>290</height>
-                    </size>
-                   </property>
-                   <property name="dateTime">
-                    <datetime>
-                     <hour>23</hour>
-                     <minute>59</minute>
-                     <second>0</second>
-                     <year>2025</year>
-                     <month>12</month>
-                     <day>31</day>
-                    </datetime>
-                   </property>
-                   <property name="currentSection">
-                    <enum>QDateTimeEdit::Section::MonthSection</enum>
-                   </property>
-                   <property name="displayFormat">
-                    <string>MM/dd/yyyy hh:mm</string>
-                   </property>
-                   <property name="calendarPopup">
-                    <bool>true</bool>
-                   </property>
-                  </widget>
-                 </item>
                 </layout>
                </widget>
               </item>
@@ -592,7 +611,7 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout">
+        <layout class="QHBoxLayout" name="botom_hlayout">
          <item>
           <spacer name="spacer38">
            <property name="orientation">

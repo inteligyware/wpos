@@ -20,14 +20,22 @@ struct ProductOptionData {
     QString description_option;
     double value;
     bool is_default;
+
+    bool isEmpty() const
+    {
+        return option_type.isEmpty()
+            && description_type.isEmpty()
+            && option_name.isEmpty()
+            && description_option.isEmpty();
+    }
 };
 
 class ProductOptionsModuleDB : public BasicDatabase {
 public:
-    ProductOptionsModuleDB(QString _name_connection, QString _path_connection, QString _database, QString _username, QString _passwd);
-    ProductOptionsModuleDB(const QString& _connection_name, XmlConfig* xml);
-    ProductOptionsModuleDB(const QString& _connection_name, const QString& configuration_path);
-    ~ProductOptionsModuleDB();
+    ProductOptionsModuleDB(
+        const QString& con_name, const QString& con_param, const QString& db, const QString& user, const QString& pwd);
+    ProductOptionsModuleDB(const QString& con_name, XmlConfig* xml);
+    ProductOptionsModuleDB(const QString& con_name, const QString& conf_file);
 
     bool existOption(const QString& option_type, const QString& option_name);
 
@@ -41,15 +49,15 @@ public:
 
     QString getDescriptionOptionType(const QString& option_type);
 
-    ProductOptionData* getOption(const QString& option_type, const QString& option_name);
+    ProductOptionData getOption(const QString& option_type, const QString& option_name);
 
-    QStringList* getOptions(const QString& option_type);
+    QStringList getOptions(const QString& option_type);
 
-    ProductOptionData* getOptionType(const QString& option_type);
+    ProductOptionData getOptionType(const QString& option_type);
 
-    QList<ProductOptionData*>* getAllOptions();
+    QVector<ProductOptionData> getAllOptions();
 
-    QStringList* getOptionTypes();
+    QStringList getOptionTypes();
 
     bool insertOption(const QString& option_type, const QString& option_name,
         const QString& option_description);
@@ -64,7 +72,7 @@ public:
     bool existProductAndOption(const QString& product_code, const QString& option_type,
         const QString& option_name);
 
-    QList<ProductOptionData*>* getProductOptions(const QString& product_code);
+    QVector<ProductOptionData> getProductOptions(const QString& product_code);
 
     bool insertOptionToProduct(const QString& product_code, const QString& option_type,
         const QString& option_name, double value, const QString& is_default);

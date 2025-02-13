@@ -8,10 +8,12 @@
 #ifndef PRODUCTMODULE_H
 #define PRODUCTMODULE_H
 
+#include "database/productsmoduledb.h"
 #include "database/productoptionsmoduledb.h"
 #include "productmoduleinterface.h"
 
 #include <libbslxml/xmlconfig.h>
+#include <wposcore/config.h>
 
 #include <QList>
 #include <QObject>
@@ -27,7 +29,10 @@ public:
     static const QString DBusObjectPath;
 
     explicit ProductModule(QObject* parent = 0, const QString& name = QString {});
-    ~ProductModule() = default;
+    ~ProductModule() {
+        database.disConnect();
+        options_db.disConnect();
+    }
 
     bool isUnitaryProduct(QString product_code);
 
@@ -100,9 +105,12 @@ signals:
     void productAtXml(int progress, const QString& product_name);
 
 protected:
-    int productPosition(const QString& name, XmlConfig* xml);
-    void writeOptions(QList<ProductOptionData*>* options, XmlConfig* xml);
+    int productPosition(const QString& name, XmlConfig& xml);
+    void writeOptions(const QVector<ProductOptionData>& options, XmlConfig& xml);
     //        void writeOffers(QList<ProductOfferData*> *offers, XmlConfig *xml);
+private:
+    ProductsModuleDB database { "ProductsModuleDB", cfg::xmlFileByKey(cfg::XMLKey::Database) };
+    ProductOptionsModuleDB options_db { "ProductOptionsModuleDB", cfg::xmlFileByKey(cfg::XMLKey::Database) };
 };
 
 #endif

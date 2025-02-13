@@ -15,7 +15,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#include "ui_numpad.h"
 #include "numkeyboard.h"
 #include <QLayout>
 #include <QKeyEvent>

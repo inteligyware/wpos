@@ -12,6 +12,7 @@
 
 #include <libbslxml/xmlconfig.h>
 #include <wposcore/basicdatabase.h>
+#include <wposcore/config.h>
 
 #include <QString>
 #include <QtCore/QObject>
@@ -26,7 +27,7 @@ public:
     static const QString DBusObjectPath;
 
     explicit ProductOptionModule(QObject* parent = 0, const QString& name = QString {});
-    ~ProductOptionModule() = default;
+    ~ProductOptionModule() { database.disConnect(); }
 
 public slots:
     Q_SCRIPTABLE bool deleteOption(const QString& xml_string) override;
@@ -74,10 +75,10 @@ public slots:
     Q_SCRIPTABLE void updateAllProductOptionValue(const QString& option_type, const QString& option_name, const QString& value) override;
 
 private:
-    QString getStringXmlOption(ProductOptionData* option);
+    QString getStringXmlOption(const ProductOptionData& option);
 
 private:
-    ProductOptionsModuleDB* db;
+    ProductOptionsModuleDB database { "ProductOptionsModuleDB", cfg::xmlFileByKey(cfg::XMLKey::Database) };
 };
 
 #endif

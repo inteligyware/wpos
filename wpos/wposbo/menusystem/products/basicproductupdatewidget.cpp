@@ -1,14 +1,8 @@
-/***************************************************************************
-                          bslupdateproductswidget.cpp  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  basicproductupdatewidget.cpp
+// birth     :  9/27/2023
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "basicproductupdatewidget.h"
 #include "productoffercreationwidget.h"

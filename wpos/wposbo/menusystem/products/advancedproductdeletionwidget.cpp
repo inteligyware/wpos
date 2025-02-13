@@ -1,3 +1,9 @@
+// file      :  advancedproductdeletionwidget.cpp
+// birth     :  9/27/2023
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
+
 #include "advancedproductdeletionwidget.h"
 
 #include "productsmodule/productmodule.h"

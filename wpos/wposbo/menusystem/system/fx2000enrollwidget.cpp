@@ -1,19 +1,9 @@
-/***************************************************************************
-                          fx2000enrollwidget.cpp  -  description
-                             -------------------
-    begin                : Sat oct 25 2003
-    copyright            : (C) 2003 by BSTeam
-    email                : bsteam@bluesock.net
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+// file      :  fx2000enrollwidget.cpp
+// birth     :  25/10/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "fx2000enrollwidget.h"
 

@@ -1,14 +1,9 @@
-/***************************************************************************
-                          bsladdoptionwidget.cpp  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  productoptioncreationwidget.hcpp
+// birth     :  6/2/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "productoptioncreationwidget.h"
 
@@ -46,7 +41,7 @@ static const QString& OPTIONS_LIST_DTD = "dtddocs:products_optionslist.dtd";
 static const QString& OPTION_ICON_PATH = cfg::CONTROLS_32_DIR;
 static const double ICON_SIZE = 30.00;
 
-static const QString& XML_DESCRIPTION { "xmldocs:mainscreen_description.xml" };
+static const QString& XML_DESCRIPTION { "xmldocs:wposbo_main_screen.xml" };
 
 ProductOptionCreationWidget::ProductOptionCreationWidget(
     double _product_price,

@@ -20,9 +20,6 @@
 #include <QSignalMapper>
 #include <QKeyEvent>
 
-#include <iostream>
-using namespace std;
-
 static const  int KEY_0   {0};
 static const  int KEY_1   {1};
 static const  int KEY_2   {2};

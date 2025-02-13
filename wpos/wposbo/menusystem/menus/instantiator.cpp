@@ -1,15 +1,9 @@
-
-/***************************************************************************
-                          bslinstantiator.cpp  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  instantiator.cpp
+// birth     :  6/2/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "instantiator.h"
 #include "supportwidget.h"
@@ -41,7 +35,7 @@
 #include "menusystem/reports/nprofitreportwidget.h"
 #include "menusystem/reports/persticketwidget.h"
 #include "menusystem/reports/perszwidget.h"
-// #include "menusystem/reports/nprodandofferreportwidget.h"
+#include "menusystem/reports/nprodandofferreportwidget.h"
 
 // #include "menusystem/system/fx2000configwidget.h"
 #include "menusystem/system/devicesconfigwidget.h"
@@ -72,7 +66,7 @@ Instantiator::Instantiator(QWidget* parent, const QString& name)
     initDcopModules();
 
     emit splashRequested(tr("System Module"), splash_align, splash_color);
-    initSysConfMenu();
+    initSystemConfigMenu();
 
     emit splashRequested(tr("Personel Module"), splash_align, splash_color);
     initUsersMenu();
@@ -106,7 +100,7 @@ void Instantiator::initDcopModules()
     product_mod = new ProductModule(this, "productmodule");
 }
 
-void Instantiator::initSysConfMenu()
+void Instantiator::initSystemConfigMenu()
 {
     QWidget* widget = new SubMenuInfoFrame(nullptr, "INFO");
     menus.append(widget, "SYSCONF_SUBMENU");
@@ -141,7 +135,6 @@ void Instantiator::initUsersMenu()
 
 void Instantiator::initProductsMenu()
 {
-
     // Main information for this menu
     QWidget* widget = new SubMenuInfoFrame(nullptr, "INFO");
     menus.append(widget, "PRODUCTS_SUBMENU");
@@ -208,7 +201,6 @@ void Instantiator::initOffersAndOptionsMenu()
 
 void Instantiator::initHistoricMenu()
 {
-
     // Main information for this menu
     QWidget* widget = new SubMenuInfoFrame(nullptr, "INFO");
     menus.append(widget, "HISTORIC_SUBMENU");
@@ -222,7 +214,6 @@ void Instantiator::initHistoricMenu()
 
 void Instantiator::initReportMenu()
 {
-
     // Main information for this menu
     QWidget* widget = new SubMenuInfoFrame(nullptr, "INFO");
     menus.append(widget, "REPORT_SUBMENU");
@@ -230,8 +221,8 @@ void Instantiator::initReportMenu()
     widget = new NProfitReportWidget(user_mod, nullptr, "PROFIT_REPORT");
     menus.append(widget, "PROFIT_SUBMENU");
 
-    //@benes    widget = new NProdAndOfferReportWidget(user_mod, nullptr, "PROD_AND_OFFER_REPORT");
-    //@benes    menus.append(widget, "PRODUCT_AND_OFFERS_SUBMENU");
+    widget = new NProdAndOfferReportWidget(user_mod, nullptr, "PROD_AND_OFFER_REPORT");
+    menus.append(widget, "PRODUCT_AND_OFFERS_SUBMENU");
 }
 
 void Instantiator::initStickMenu()

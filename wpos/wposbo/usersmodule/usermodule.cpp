@@ -7,9 +7,6 @@
 
 #include "usermodule.h"
 #include "usermodule_adaptor.h"
-
-#include "database/usersmoduledb.h"
-
 #include <libbslxml/xmlconfig.h>
 
 #include <QDir>
@@ -21,20 +18,17 @@
 #include <iostream>
 using namespace std;
 
-const QString& DCOP_OBJECT_INTERFACE_NAME = "UserModelInterface";
-
 const QString& DCOPFX2000_FINGERPRINT_DIR = "/etc/fx2000fingerprint/";
 const QString& USER_DTD = "dtddocs:users_user.dtd";
 const QString& USER_LIST_DTD = "dtddocs:users_userslist.dtd";
 const QString& DCOPFX2000_ENROLL_DTD = "dtddocs:dcopfx2000_enroll.dtd";
-const QString& DATABASE_CONNECTION_NAME = "UserModuleConnection";
-const QString& DATABASE_DEFINITION_FILE = "xmldocs:bar_database.xml";
 
 const QString UserModule::DBusObjectPath = QString { "/wpos/wposbo/DBusBOUser" };
 UserModule::UserModule(QObject* parent, const QString& name)
     : QObject(parent)
 {
     setObjectName(name);
+    database.connect();
     new DBusBOUserAdaptor(this);
     QDBusConnection dbus = QDBusConnection::sessionBus();
     dbus.registerObject(UserModule::DBusObjectPath, this);
@@ -42,26 +36,24 @@ UserModule::UserModule(QObject* parent, const QString& name)
 
 bool UserModule::createUser(const QString& string_xml)
 {
-
     UserData data { readUserFromXml(string_xml) };
     if (data.isEmpty())
         return false;
 
-    UsersModuleDB database(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
     UserData aux_data { database.getUserInfo(data.employee_id) };
 
     if (!aux_data.isEmpty()) {
         if (database.getActiveFlag(data.employee_id)) {
             return false;
         }
-        if (!database.updateUser(&data)) {
+        if (!database.updateUser(data)) {
             return false;
         }
         if (!database.setActiveFlag(data.employee_id, true)) {
             return false;
         }
     } else {
-        if (!database.addUser(&data)) {
+        if (!database.addUser(data)) {
             return false;
         }
     }
@@ -73,11 +65,8 @@ bool UserModule::createUser(const QString& string_xml)
 
 bool UserModule::changeUser(const QString& string_xml)
 {
-
-    UsersModuleDB database(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
     UserData data { readUserFromXml(string_xml) };
-
-    if (data.isEmpty() || !database.updateUser(&data))
+    if ( data.isEmpty() || !database.updateUser(data))
         return false;
     emit userUpdated(data.employee_id);
     emit updatesAvailable();
@@ -86,16 +75,14 @@ bool UserModule::changeUser(const QString& string_xml)
 
 bool UserModule::deleteUser(const QString& employee_id)
 {
-    UsersModuleDB* db = 0;
-    if (employee_id.isNull() || employee_id.isEmpty() || (employee_id == "1"))
+    if (employee_id.isNull()
+        || employee_id.isEmpty()
+        || (employee_id == "1"))
         return false;
 
-    db = new UsersModuleDB(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
-    if (!db->delUser(employee_id)) {
-        delete db;
+    if (!database.delUser(employee_id)) {
         return false;
     }
-    delete db;
     emit userDeleted(employee_id);
     emit updatesAvailable();
     return true;
@@ -103,18 +90,14 @@ bool UserModule::deleteUser(const QString& employee_id)
 
 bool UserModule::realDelUser(const QString& employee_id)
 {
-    UsersModuleDB* db = 0;
-    if (employee_id.isNull() || employee_id.isEmpty() || (employee_id == "1"))
+    if (employee_id.isNull()
+        || employee_id.isEmpty()
+        || (employee_id == "1"))
         return false;
 
-    this->delUserFingerprints(employee_id);
-
-    db = new UsersModuleDB(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
-    if (!db->realDelUser(employee_id)) {
-        delete db;
+    delUserFingerprints(employee_id);
+    if (!database.realDelUser(employee_id))
         return false;
-    }
-    delete db;
 
     emit userDeleted(employee_id);
     emit updatesAvailable();
@@ -123,7 +106,6 @@ bool UserModule::realDelUser(const QString& employee_id)
 
 bool UserModule::delUserFingerprints(const QString& employee_id)
 {
-
     if (employee_id.isEmpty() || employee_id == "1")
         return false;
 
@@ -142,9 +124,7 @@ bool UserModule::delUserFingerprints(const QString& employee_id)
 
 QString UserModule::usersList(bool all)
 {
-
     QVector<UserData> users {};
-    UsersModuleDB database(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
     users = database.getUserList(all);
     if (users.isEmpty())
         return QString {};
@@ -156,6 +136,7 @@ QString UserModule::usersList(bool all)
     auto i = 0;
     for (const auto& data : users) {
         xml.createElementSetDomain("user[" + QString::number(i++) + "]");
+        xml.createElement("picture", data.picture);
         xml.createElement("employee_id", data.employee_id);
         xml.createElement("name", data.name);
         xml.createElement("last_name", data.last_name);
@@ -168,7 +149,6 @@ QString UserModule::usersList(bool all)
 QString UserModule::usersExtendedList(bool all)
 {
 
-    UsersModuleDB database(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
     QVector<UserData> users = database.getUserList(all);
     if (users.isEmpty())
         return QString {};
@@ -204,7 +184,6 @@ QString UserModule::usersExtendedList(bool all)
 QString UserModule::getUserInfo(const QString& employee_id)
 {
 
-    UsersModuleDB database(DATABASE_CONNECTION_NAME, DATABASE_DEFINITION_FILE);
     UserData data { database.getUserInfo(employee_id) };
 
     if (data.isEmpty())
@@ -237,7 +216,8 @@ UserData UserModule::readUserFromXml(const QString& string_xml)
 {
 
     XmlConfig xml;
-    if (!xml.readXmlFromString(string_xml) && !xml.validateXmlWithDTD(USER_DTD, true))
+    if (!xml.readXmlFromString(string_xml)
+        && !xml.validateXmlWithDTD(USER_DTD, true))
         return UserData();
 
     // read data from the xml
@@ -258,34 +238,34 @@ UserData UserModule::readUserFromXml(const QString& string_xml)
     return data;
 }
 
-void UserModule::enrollUserData(const QString& _xml)
+void UserModule::enrollUserData(const QString& xml_string)
 {
-    XmlConfig* xml = 0;
-
-    if (_xml.isEmpty())
-        return;
+    if (xml_string.isEmpty()) return;
 
     // validate the string to XML and the XML with a DTD
-    xml = new XmlConfig();
-    xml->readXmlFromString(_xml);
-    if (!xml->wellFormed()) {
-        delete xml;
-        return;
+    XmlConfig xml;
+
+    if (!xml.readXmlFromString(xml_string)) {
+        cerr << "Cannot convert string into xml"
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return ;
     }
 
-    if (!xml->validateXmlWithDTD(DCOPFX2000_ENROLL_DTD, true)) {
-        delete xml;
-        return;
+    if (!xml.validateXmlWithDTD(DCOPFX2000_ENROLL_DTD, true)) {
+        cerr << "XML does not validate against DTD "
+             << __PRETTY_FUNCTION__ << " : " << __LINE__ << '\n';
+        return ;
     }
-    delete xml;
 
     // if all is correct emit a string with all the data.
-    emit enrollDataAvailable(_xml);
+    emit enrollDataAvailable(xml_string);
+
 }
 
 QString UserModule::getInterfaceName()
 {
-    return DCOP_OBJECT_INTERFACE_NAME;
+    //DCOP object Interface Name
+    return QString("UserModelInterface");
 }
 
 QString UserModule::getEnrollMethodName()

@@ -17,14 +17,9 @@
 
 struct ProductOfferData {
     ProductOfferData() = default;
-    //    ProductOfferData(const ProductOfferData& data) = default;
-    //    ProductOfferData& operator=(ProductOfferData &data) = default;
-    //    ~ProductOfferData() = default;
-
     ProductOfferData(const ProductOfferData* data)
-        : ProductOfferData(*data)
-    {
-    }
+        : ProductOfferData(*data){}
+
     QString offer_type;
     QString description_type;
     QString cpp_operator;
@@ -33,23 +28,28 @@ struct ProductOfferData {
     QString logo;
     double value { 0.0 };
     bool is_default { false };
+    bool isNull() const{
+        return offer_type.isEmpty()
+            && offer_name.isEmpty()
+            && description_type.isEmpty()
+            && description_offer.isEmpty()
+            && logo.isEmpty();
+    }
 };
 
 class ProductOffersModuleDB : public BasicDatabase {
 public:
-    ProductOffersModuleDB(QString _name_connection,
-        QString _path_connection,
-        QString _database,
-        QString _username,
-        QString _passwd);
+    ProductOffersModuleDB(QString con_name,
+        QString con_path,
+        QString db,
+        QString user,
+        QString pwd);
 
-    ProductOffersModuleDB(const QString& _connection_name,
+    ProductOffersModuleDB(const QString& con_name,
         XmlConfig* xml);
 
-    ProductOffersModuleDB(const QString& _connection_name,
-        const QString& configuration_path);
-
-    ~ProductOffersModuleDB();
+    ProductOffersModuleDB(const QString& con_name,
+        const QString& conf_path);
 
     bool existOffer(const QString& offer_type, const QString& offer_name);
 
@@ -67,15 +67,15 @@ public:
 
     QString getLogoOffer(const QString& offer_type, const QString& offer_name);
 
-    ProductOfferData* getOffer(const QString& offer_type, const QString& offer_name);
+    ProductOfferData getOffer(const QString& offer_type, const QString& offer_name);
 
-    QList<ProductOfferData*>* getOffers(const QString& offer_type);
+    QVector<ProductOfferData> getOffers(const QString& offer_type);
 
-    QList<ProductOfferData*>* getAllOffers();
+    QVector<ProductOfferData> getAllOffers();
 
-    ProductOfferData* getOfferType(const QString& offer_type);
+    ProductOfferData getOfferType(const QString& offer_type);
 
-    QStringList* getOfferTypes();
+    QStringList getOfferTypes();
 
     bool insertOffer(const QString& offer_type, const QString& offer_name, const QString& description, const QString& logo = "");
 
@@ -87,7 +87,7 @@ public:
 
     bool updateOfferType(const QString& offer_type, const QString& description, const QString& cpp_operator);
 
-    QList<ProductOfferData*>* getProductOffers(const QString& product_code);
+    QVector<ProductOfferData> getProductOffers(const QString& product_code);
 
     bool existProductAndOffer(const QString& product_code, const QString& offer_type, const QString& offer_name);
 

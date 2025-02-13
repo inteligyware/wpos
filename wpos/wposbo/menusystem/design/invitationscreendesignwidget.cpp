@@ -1,14 +1,9 @@
-/***************************************************************************
-                          bslscreeninvitationsdesignwidget.cpp  -  description
-                             -------------------
-    begin                 : mon Jun 2 2003
-    copyright          : (C) 2003 by Napsis S.L.
-    email                 : carlos@napsis.com
-
-@author Carlos Manzanedo Rueda
-
-%LICENCIA%
- ***************************************************************************/
+// file      :  invitationscreendesignwidget.cpp
+// birth     :  6/2/2003
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "invitationscreendesignwidget.h"
 #include "addinvitationscreenwidget.h"

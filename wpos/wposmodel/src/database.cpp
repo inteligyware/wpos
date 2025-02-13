@@ -20,7 +20,7 @@
 odb::dbptr_t wpos::database::dbptr{nullptr};
 
 wpos::database::Connector wpos::database::cntr{};
-const string wpos::database::SQLITE_FILE{"wpos.db"};
+const string wpos::database::SQLITE_FILE{"wpos.sqlite"};
 
 void wpos::database::loadConnector(Connector &cntr){
     Connector tmp_cntr{"SQLITE", "localhost","wpos","wpos","D0rc4566$", 5432};

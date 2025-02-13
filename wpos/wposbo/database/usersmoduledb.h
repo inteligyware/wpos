@@ -15,17 +15,6 @@
 class QString;
 class XmlConfig;
 
-template <typename T>
-class QList;
-template <typename Key, typename Value>
-class QMap;
-
-template <typename Value>
-using QPtrMap = QMap<QString, Value*>;
-
-template <typename Value>
-using QPtrList = QList<Value*>;
-
 struct UserData {
     QString employee_id;
     QString name;
@@ -53,8 +42,12 @@ public:
      *       @param  QString with the name of the user to connect to the database.
      *       @param  QString with the password to make operations at the database.
      */
-    UsersModuleDB(const QString& _connection_name, const QString& _hostname,
-        const QString& _database, const QString& _username, const QString& _passwd);
+    UsersModuleDB(
+        const QString& con_name,
+        const QString& host,
+        const QString& db,
+        const QString& user,
+        const QString& pwd);
     /**
      *       constructor, the connection name should be different for each connection. the XmlConfig should describe
      *       the connection.
@@ -68,7 +61,7 @@ public:
      *       <!ELEMENT user (#PCDATA)>
      *       <!ELEMENT passwd (#PCDATA)>
      */
-    UsersModuleDB(const QString& _connection_name, XmlConfig* xml);
+    UsersModuleDB(const QString& con_name, XmlConfig* xml);
 
     /**
      *       constructor, the connection name should be different for each connection. the XmlConfig should describe
@@ -77,15 +70,14 @@ public:
      *       @param  A path to an Xml with the description of the connection.
      *       The Xml Should validate against the basicDatabase Connection DTD
      */
-    UsersModuleDB(const QString& _connection_name, const QString& configuration_path);
-    ~UsersModuleDB();
+    UsersModuleDB(const QString& con_name, const QString& conf_path);
 
     /**
      *       add a user to the database
      *       @param UserData. the id,name,last_name of the userData should not be empty
      *       @return bool with true if the user has been inserted at the databse, false if errors.
      */
-    bool addUser(const UserData* user);
+    bool addUser(const UserData &user);
 
     /**
      *       this method tries to update the user with the user->employee_id, with all the data at the UserData class
@@ -93,7 +85,7 @@ public:
      *       select the user that is going to be updated.
      *       @return bool with true if the user has been updated at the databse, false if errors.
      */
-    bool updateUser(const UserData* user);
+    bool updateUser(const UserData &user);
 
     /**
      *       this method delte a user from the database

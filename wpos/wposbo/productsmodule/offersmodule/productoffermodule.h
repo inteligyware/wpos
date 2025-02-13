@@ -8,8 +8,10 @@
 #ifndef PRODUCT_OFFER_MODULE_H
 #define PRODUCT_OFFER_MODULE_H
 
+#include "database/productoffersmoduledb.h"
 #include "productoffermoduleinterface.h"
-#include <QString>
+#include <wposcore/config.h>
+#include <QtCore/QString>
 #include <QtCore/QObject>
 
 class ProductOffersModuleDB;
@@ -24,8 +26,11 @@ class ProductOfferModule : public QObject,
 public:
     static const QString DBusObjectPath;
 
-    explicit ProductOfferModule(QObject* parent = 0, const QString& name = QString {});
-    ~ProductOfferModule() = default;
+    explicit ProductOfferModule(
+        QObject* parent = 0,
+        const QString& name = QString {});
+
+    ~ProductOfferModule() { database.disConnect(); }
 
 public slots:
     Q_SCRIPTABLE bool deleteOffer(const QString& xml_string) override;
@@ -65,10 +70,10 @@ public slots:
     Q_SCRIPTABLE void updateAllProductOfferValue(const QString& offer_type, const QString& offer_name, const QString& value) override;
 
 private:
-    QString getStringXmlOffer(ProductOfferData* offer);
+    QString getStringXmlOffer(const ProductOfferData &offer);
 
 private:
-    ProductOffersModuleDB* db;
+    ProductOffersModuleDB database { "ProductOffersModuleDB", cfg::xmlFileByKey(cfg::XMLKey::Database) };
 };
 
 #endif

@@ -1,10 +1,9 @@
-/***************************************************************************
-                          ndelproductwidget.cpp  -  description
-                             -------------------
-    begin                : lun may 3 2004
-    copyright            : (C) 2003 by Napsis S.L.
-    email                : carlos@napsis.com
- ***************************************************************************/
+// file      :  advancedproducteditionwidget.cpp
+// birth     :  5/3/2004
+// copyright :  Copyright (c) 2003 by Napsis S.L.
+// copyright :  Copyright (c) 2016-2024 WireSens Inc.
+// author    :  Carlos Manzanedo Rueda, Gilles Bene Pougoue
+// contact   :  contact@wiresens.com - +237 697 02 63 76
 
 #include "advancedproducteditionwidget.h"
 #include "menusystem/utils.h"
@@ -13,6 +12,7 @@
 
 #include <libbslxml/xmlconfig.h>
 #include <wposcore/config.h>
+#include <wposgui/common/toolkit.h>
 
 #include <QLabel>
 #include <QLayout>
@@ -40,15 +40,21 @@ AdvancedProductEditionWidget::AdvancedProductEditionWidget(
 {
     setupUi(this);
     setObjectName(name);
+    setupWidgets();
+    setWidgetsIcons();
+    connectWidgets();
+}
 
-    product_listview->setColumnWidth(Icon, 100);
-    product_listview->setColumnWidth(Code, 730);
-    //@benes    product_listview->setResizeMode(QListView::NoColumn);
+void AdvancedProductEditionWidget::setupWidgets(){
+    product_listview->setColumnWidth(Icon, 90);
+    product_listview->setColumnWidth(Code, 300);
+    product_listview->setHeaderLabels({"Icon", "Code", "Name"});
     product_listview->setSelectionMode(QAbstractItemView::SingleSelection);
     product_listview->setAllColumnsShowFocus(true);
-    clear();
-
     stack->setCurrentWidget(progress_page);
+}
+
+void AdvancedProductEditionWidget::setWidgetsIcons(){
     ok_button->setIcon(QPixmap("controls48:button_ok_48.png"));
     cancel_button->setIcon(QPixmap("controls48:button_cancel.png"));
     up_button->setIcon(QPixmap("controls48:up.png"));
@@ -56,35 +62,49 @@ AdvancedProductEditionWidget::AdvancedProductEditionWidget(
 
     ok_delete_button->setIcon(QPixmap("controls48:button_ok_48.png"));
     cancel_delete_button->setIcon(QPixmap("controls48:button_cancel.png"));
+}
 
-    connect(up_button, &QPushButton::clicked, this, &AdvancedProductEditionWidget::upButtonSlot);
-    connect(down_button, &QPushButton::clicked, this, &AdvancedProductEditionWidget::downButtonSlot);
-    connect(search_button, &QPushButton::clicked, this, &AdvancedProductEditionWidget::searchButtonSlot);
-    connect(ok_button, &QPushButton::clicked, this, &AdvancedProductEditionWidget::acceptSlot);
-    connect(cancel_button, &QPushButton::clicked, this, &AdvancedProductEditionWidget::cancelSlot);
+void AdvancedProductEditionWidget::connectWidgets(){
+    connect(up_button, &QPushButton::clicked,
+            this, &AdvancedProductEditionWidget::upButtonSlot);
+    connect(down_button, &QPushButton::clicked,
+            this, &AdvancedProductEditionWidget::downButtonSlot);
+    connect(search_button, &QPushButton::clicked,
+            this, &AdvancedProductEditionWidget::searchButtonSlot);
+    connect(ok_button, &QPushButton::clicked,
+            this, &AdvancedProductEditionWidget::acceptSlot);
+    connect(cancel_button, &QPushButton::clicked,
+            this, &AdvancedProductEditionWidget::cancelSlot);
 
     connect(this, &AdvancedProductEditionWidget::progressSignal,
-        this, &AdvancedProductEditionWidget::setProgressSlot);
+            this, &AdvancedProductEditionWidget::setProgressSlot);
 
     connect(product_listview, &QTreeWidget::itemSelectionChanged,
-        this, &AdvancedProductEditionWidget::productSelectedSlot);
+            this, &AdvancedProductEditionWidget::productSelectedSlot);
+
+    connect(product_listview->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, &AdvancedProductEditionWidget::enableOkButton);
 
     connect(search_lineedit, &QLineEdit::textChanged,
-        this, &AdvancedProductEditionWidget::nameChangedSlot);
+            this, &AdvancedProductEditionWidget::nameChangedSlot);
 }
 
 void AdvancedProductEditionWidget::showEvent(QShowEvent* e)
 {
-    QTimer::singleShot(TIME_OUT, this, &AdvancedProductEditionWidget::startShowing);
+    QTimer::singleShot(
+        TIME_OUT,
+        this,
+        &AdvancedProductEditionWidget::startShowing);
     QWidget::showEvent(e);
 }
 
 void AdvancedProductEditionWidget::startShowing()
 {
-    clear();
-    stack->setCurrentWidget(progress_page);
-    loadList();
-    stack->setCurrentWidget(product_page);
+    if ( !product_page->isVisible() ){
+        stack->setCurrentWidget(progress_page);
+        fetchProducts();
+        stack->setCurrentWidget(product_page);
+    }
 }
 
 void AdvancedProductEditionWidget::clear()
@@ -97,16 +117,17 @@ void AdvancedProductEditionWidget::clear()
     progress_bar->setValue(0);
 }
 
-void AdvancedProductEditionWidget::loadList()
+void AdvancedProductEditionWidget::fetchProducts()
 {
-    product_listview->clear();
     XmlConfig xml;
     if (!xml.readXmlFromString(product_model->getUnitaryProducts())) {
-        cerr << "can not convert the string into xml " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "can not convert the string into xml "
+             << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
         return;
     }
     if (!xml.validateXmlWithDTD(PRODUCTS_DTD, true)) {
-        cerr << "xml does not validate against dtd " << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
+        cerr << "xml does not validate against dtd "
+             << __PRETTY_FUNCTION__ << ": " << __LINE__ << endl;
         return;
     }
 
@@ -117,19 +138,13 @@ void AdvancedProductEditionWidget::loadList()
     progress_bar->setMaximum(limit);
 
     for (auto i = 0; i < limit; i++) {
-        if (!isVisible()) {
-            xml.delDomain();
-            product_listview->clear();
-            return;
-        }
-
         xml.setDomain("product[" + QString::number(i) + "]");
         auto name = xml.readString("name");
         auto code = xml.readString("code");
 
-        if (name.isEmpty() || code.isEmpty())
-            continue;
-        if (name == "varios" && code == "varios")
+        if (name.isEmpty()
+            || code.isEmpty()
+            || (name == "varios" && code == "varios"))
             continue;
 
         auto item = new QTreeWidgetItem(product_listview);
@@ -137,8 +152,8 @@ void AdvancedProductEditionWidget::loadList()
             auto icon_path = cfg::PRODUCT_DIR + xml.readString("logo");
             item->setIcon(Icon, cropedIcon(icon_path, ICON_SIZE));
         }
-        item->setText(Name, name);
         item->setText(Code, code);
+        item->setText(Name, name);
         xml.releaseDomain("product", true);
         emit progressSignal(i, name);
     }
@@ -152,25 +167,29 @@ void AdvancedProductEditionWidget::setProgressSlot(int num, const QString& produ
     qApp->processEvents();
 }
 
+void AdvancedProductEditionWidget::enableOkButton(){
+    ok_button->setEnabled(isItemSelected());
+}
+
 void AdvancedProductEditionWidget::upButtonSlot()
 {
-    product_listview->scroll(0, -SCROLL_LENGTH);
+    // product_listview->scroll(0, -SCROLL_LENGTH);
+    selectTreeItemUp(product_listview);
+
 }
 
 void AdvancedProductEditionWidget::downButtonSlot()
 {
-    product_listview->scroll(0, SCROLL_LENGTH);
+    // product_listview->scroll(0, SCROLL_LENGTH);
+    selectTreeItemDown(product_listview);
 }
 
 void AdvancedProductEditionWidget::productSelectedSlot()
 {
     auto item = selectedItem();
-    if (!item)
-        return;
+    if (!item) return;
 
     auto code = item->text(Code);
-    ok_button->setEnabled(isItemSelected());
-
     if (item->childCount()) {
         item->setExpanded(!item->isExpanded());
         return;
@@ -204,7 +223,7 @@ void AdvancedProductEditionWidget::productSelectedSlot()
 
 bool AdvancedProductEditionWidget::isItemSelected()
 {
-    return !product_listview->selectedItems().isEmpty();
+    return product_listview->selectionModel()->hasSelection();
 }
 
 void AdvancedProductEditionWidget::nameChangedSlot(const QString& text)
@@ -238,7 +257,7 @@ QTreeWidgetItem* AdvancedProductEditionWidget::selectedItem() const
 {
     auto source = qobject_cast<QTreeWidget*>(sender());
 
-    if (!source || source->selectedItems().isEmpty())
+    if ( !source || source->selectedItems().isEmpty() )
         return nullptr;
     return source->selectedItems().first();
 }
