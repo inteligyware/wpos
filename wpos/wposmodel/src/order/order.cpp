@@ -45,7 +45,8 @@ void Order::addItem(ConstProductPtr product, uint32_t quantity){
 
     if(!found){
         OrderLinePtr orderLine = std::make_shared<OrderLine>(shared_from_this(), product, quantity);
-//        OrderLinePtr orderLine( new OrderLine{shared_from_this(), product, quantity});
+        // OrderLinePtr orderLine = ::make_shared<OrderLine>(shared_from_this(), product, quantity);
+        // OrderLinePtr orderLine( new OrderLine{shared_from_this(), product, quantity});
         items_.emplace_back(orderLine);
     }
 

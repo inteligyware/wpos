@@ -54,7 +54,7 @@ public:
   * to check if everything is OK we have this method
   * @return true if correct memory tree false if the object is inconsistent
   */
-    bool ok();
+    bool ok() const;
 
     /**
     * Saves the xml data in a file named file and flush it to disk.

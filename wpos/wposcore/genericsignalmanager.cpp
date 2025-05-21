@@ -24,10 +24,10 @@
 static bool debug{false};
 
 // Simple alternative using C++11
-GenericSignalManager* GenericSignalManager::instance(){
-    static GenericSignalManager gsm;
-    return &gsm;
-}
+// GenericSignalManager* GenericSignalManager::instance(){
+//     static GenericSignalManager gsm;
+//     return &gsm;
+// }
 
 void GenericSignalManager::publishGenericSignal(
     const QString& signal,

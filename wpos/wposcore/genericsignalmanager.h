@@ -27,23 +27,38 @@
 
 #include <QObject>
 
+#include "wposcore/signals.h"
 #include "hlist.h"
-#include "signals.h"
 
 class QString;
 
-class GenericSignalManager : public QObject  {
+template< typename Singleton>
+class SingletonHolder{
+public:
+    static Singleton* instance() {
+        static Singleton s;
+        return &s;
+    }
+
+protected:
+    SingletonHolder()  = default;
+    ~SingletonHolder() = default;
+    SingletonHolder( const SingletonHolder&) = delete;
+    SingletonHolder& operator=(const SingletonHolder&) = delete;
+};
+
+class GenericSignalManager : public QObject , public SingletonHolder<GenericSignalManager> {
     Q_OBJECT
 
 public:
-    GenericSignalManager(const GenericSignalManager&) = delete;
-    GenericSignalManager& operator=(const GenericSignalManager&) = delete;
-
-    static GenericSignalManager* instance();
+    // static GenericSignalManager* instance();
 
 private:
-    GenericSignalManager()  = default;
-    ~GenericSignalManager() = default;
+    // GenericSignalManager()  = default;
+    // ~GenericSignalManager() = default;
+
+    // GenericSignalManager(const GenericSignalManager&) = delete;
+    // GenericSignalManager& operator=(const GenericSignalManager&) = delete;
 
     struct ObjectHub{
         QString shared_signal;

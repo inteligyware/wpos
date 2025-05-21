@@ -72,7 +72,6 @@ NProdAndOfferReportWidget::~NProdAndOfferReportWidget()
 
 void NProdAndOfferReportWidget::init()
 {
-
     // unique
     productos_button->setIcon(QPixmap("controls48:productos.png"));
     ofertas_button->setIcon(QPixmap("controls48:ksplash.png"));

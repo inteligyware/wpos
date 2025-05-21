@@ -116,7 +116,8 @@ XmlConfigPrivate::~XmlConfigPrivate(){
         m_qfile.close();
 }
 
-bool XmlConfigPrivate::ok(){
+bool XmlConfigPrivate::ok() const
+{
     return m_xml_parsed_succesfully;
 }
 
